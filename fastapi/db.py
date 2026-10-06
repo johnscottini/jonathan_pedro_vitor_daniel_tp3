@@ -27,8 +27,13 @@ engine = create_engine(DATABASE_URL, echo=False, connect_args=_connect_args)
 def init_db() -> None:
     """Cria as tabelas e os usuários iniciais. Chamado no startup da aplicação."""
     SQLModel.metadata.create_all(engine)
-    # TODO(Pessoa 2): criar os usuários iniciais (seed) definidos no contrato —
-    # `alice` e `bob`, com senha em hash bcrypt — apenas se ainda não existirem.
+
+    # Import local: `security.users` importa `models.tables`, e importar aqui no
+    # topo criaria um ciclo com `security.jwt`, que depende de `db.get_session`.
+    from security.users import criar_usuarios_iniciais
+
+    with Session(engine) as session:
+        criar_usuarios_iniciais(session)
 
 
 def get_session() -> Iterator[Session]:

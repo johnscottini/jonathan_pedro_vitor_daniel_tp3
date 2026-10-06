@@ -1,23 +1,27 @@
-# TP1 — Definição do Domínio, EDA e API Base (Customer Support)
+# Customer Support Intent API — Projeto de Bloco (TP1 + TP2)
 
 ## Objetivo do projeto
 
-Este repositório contém a primeira entrega (TP1) do Projeto de Bloco: um
-sistema de atendimento ao cliente alimentado por inteligência artificial.
-Nesta etapa o foco é **entender os dados** e **estruturar a API** que vai
-servir o sistema ao longo do bloco.
+Sistema de atendimento ao cliente apoiado por inteligência artificial. O
+repositório reúne a análise dos dados que vão alimentar o classificador de
+intenção e a API que vai servi-lo.
 
-Este TP entrega:
-1. Documentação e **análise exploratória (EDA)** do
+**TP1 — domínio, EDA e API base**
+1. Documentação e **análise exploratória** do
    [Customer Support Ticket Dataset](https://www.kaggle.com/datasets/suraj520/customer-support-ticket-dataset/data)
-   (Kaggle), incluindo inspeção inicial, verificação de qualidade, limpeza,
-   análise univariada e hipóteses sobre a intenção dos usuários.
-2. A **estrutura base de uma API FastAPI** modular, com autenticação JWT
-   (`OAuth2PasswordBearer`) protegendo o endpoint que futuramente servirá o
-   modelo de classificação de intenção.
-3. Um **DFD (Data Flow Diagram)** da API com entradas, saídas, trust
-   boundaries e a tríade CIA (Confidencialidade / Integridade /
-   Disponibilidade) aplicada a cada componente.
+   (Kaggle): inspeção inicial, qualidade dos dados, limpeza, análise univariada
+   e hipóteses sobre a intenção dos usuários.
+2. **API FastAPI** modular com autenticação JWT (`OAuth2PasswordBearer`).
+3. **DFD** da API com entradas, saídas, trust boundaries e a tríade CIA.
+
+**TP2 — análise estatística e controles OWASP**
+4. **Análise bivariada e testes de hipótese** (correlação, Mann-Whitney,
+   qui-quadrado), consolidados em [`docs/relatorio_eda.md`](docs/relatorio_eda.md).
+5. **Controles do OWASP Top 10** na API: ownership (BOLA), `extra="forbid"`,
+   SQLModel com queries parametrizadas, headers de segurança, CORS com
+   allowlist e rate limiting no login.
+6. **Auditoria com OWASP ZAP** e tratamento dos findings
+   ([`docs/zap_findings.md`](docs/zap_findings.md)).
 
 ## Estrutura de pastas
 
@@ -139,11 +143,11 @@ python -m venv .venv
 # Windows (Git Bash) / Linux / macOS
 source .venv/Scripts/activate   # ou: source .venv/bin/activate
 
-# dependências da API
-pip install -r fastapi/requirements.txt
+# dependências da API + ferramentas de teste
+pip install -r fastapi/requirements-dev.txt
 
 # dependências extras para rodar o notebook de EDA (opcional)
-pip install pandas numpy matplotlib seaborn jupyter nbclient ipykernel
+pip install -r eda/requirements.txt
 ```
 
 ## Execução
@@ -152,18 +156,22 @@ pip install pandas numpy matplotlib seaborn jupyter nbclient ipykernel
 
 ```bash
 cd fastapi
-uvicorn main:app --reload
+uvicorn main:app --reload --no-server-header
 ```
 
-A API sobe em `http://127.0.0.1:8000`. Documentação interativa
-em `http://127.0.0.1:8000/docs`.
+`--no-server-header` evita que o uvicorn anuncie a própria stack no header
+`Server`; a API devolve um valor genérico no lugar.
 
-**Usuário único autorizado (definido in-code, ver [`security/users.py`](fastapi/security/users.py)):**
+A API sobe em `http://127.0.0.1:8000`, com documentação interativa em
+`http://127.0.0.1:8000/docs`. O banco SQLite é criado na primeira execução, já
+com os usuários abaixo (ver [`security/users.py`](fastapi/security/users.py)):
 
-```
-usuário: admin
-senha:   admin123
-```
+| usuário | senha | para quê |
+|---|---|---|
+| `admin` | `admin123` | usuário administrativo herdado do TP1 |
+| `alice` | `alice123` | usuária comum — demonstra ownership de tickets |
+| `bob` | `bob123` | segundo usuário — demonstra o bloqueio de acesso cruzado (BOLA) |
+
 
 Fluxo de teste manual:
 
@@ -173,18 +181,27 @@ curl http://127.0.0.1:8000/health
 
 # 2. Login -> obtém o token JWT
 curl -X POST http://127.0.0.1:8000/auth/token \
-  -d "username=admin&password=admin123"
+  -d "username=alice&password=alice123"
 
-# 3. Chama a rota protegida com o token retornado acima
+# 3. Cria um ticket (o dono vem do token, nunca do corpo)
+curl -X POST http://127.0.0.1:8000/tickets \
+  -H "Authorization: Bearer <TOKEN_AQUI>" \
+  -H "Content-Type: application/json" \
+  -d '{"subject": "Cobranca duplicada", "description": "Fui cobrado duas vezes.", "ticket_type": "Billing inquiry"}'
+
+# 4. Busca o ticket por ID (com o token do BOB, isto devolve 404)
+curl http://127.0.0.1:8000/tickets/1 -H "Authorization: Bearer <TOKEN_AQUI>"
+
+# 5. Rota protegida de predição
 curl -X POST http://127.0.0.1:8000/predict \
   -H "Authorization: Bearer <TOKEN_AQUI>" \
   -H "Content-Type: application/json" \
-  -d "{\"text\": \"I need a refund for my order\"}"
+  -d '{"text": "I need a refund for my order"}'
 ```
 
-`POST /predict` ainda **não** roda um modelo de ML: ela retorna uma
-intenção pré-determinada (baseada em correspondência simples de palavras-
-chave) apenas para simular o formato de resposta que terá em um TP futuro.
+`POST /predict` ainda **não** roda um modelo de ML: devolve uma intenção
+pré-determinada por correspondência de palavras-chave, apenas para simular o
+formato de resposta que terá no TP3.
 
 ### Notebook de EDA
 
@@ -214,20 +231,70 @@ documentadas em [`docs/CORRECOES_TP1.md`](docs/CORRECOES_TP1.md).
 
 ---
 
-## TP2 — em andamento
+## Segurança — controles do OWASP Top 10 (TP2)
 
-Esta branch (`tp2/base`) contém as decisões de arquitetura e o esqueleto de
-código a partir do qual o TP2 é desenvolvido. **Antes de começar, leia
-[`docs/CONTRATO_TP2.md`](docs/CONTRATO_TP2.md)**: ele define a divisão de
-tarefas, o modelo de dados, o contrato das rotas, os códigos de resposta e
-quais arquivos não devem ser alterados sem combinar com o time.
+| Risco OWASP | Controle implementado | Onde |
+|---|---|---|
+| **A01 — Broken Access Control (BOLA)** | `GET /tickets/{id}` compara o dono do recurso com o usuário do token e devolve **404** (não 403) para ticket alheio, para não confirmar a existência do ID. `GET /tickets` filtra pelo dono. `owner_id` nunca vem do corpo da requisição | [`routes/tickets.py`](fastapi/routes/tickets.py) |
+| **A02 — Cryptographic Failures** | Senhas só em hash bcrypt; `SECRET_KEY` lida de variável de ambiente; HSTS obrigando HTTPS | [`security/users.py`](fastapi/security/users.py), [`core/config.py`](fastapi/core/config.py) |
+| **A03 — Injection** | Toda consulta usa `select()`/`session.get()` do SQLModel, que geram SQL parametrizado. Não há SQL em string no projeto | [`routes/tickets.py`](fastapi/routes/tickets.py), [`security/users.py`](fastapi/security/users.py) |
+| **A04 — Insecure Design** | Mensagem de erro idêntica para usuário inexistente e senha errada, e comparação de hash descartável no caminho do usuário inexistente, para não permitir enumeração por timing | [`security/users.py`](fastapi/security/users.py), [`routes/auth.py`](fastapi/routes/auth.py) |
+| **A05 — Security Misconfiguration** | HSTS, X-Frame-Options, X-Content-Type-Options, CSP, Referrer-Policy, Permissions-Policy, CORP e banner do servidor genérico; CORS com allowlist explícita; erro 500 sem stack trace | [`middleware/security_headers.py`](fastapi/middleware/security_headers.py), [`core/exception_handlers.py`](fastapi/core/exception_handlers.py) |
+| **A05 — CSP da documentação** | `/docs` e `/redoc` têm CSP própria: o `<script>` inline do Swagger é autorizado **pelo hash** (calculado em runtime), sem recorrer a `'unsafe-inline'` | [`routes/docs.py`](fastapi/routes/docs.py) |
+| **A07 — Identification and Authentication Failures** | Rate limiting no login; validação de assinatura, expiração e correspondência do `sub` com um usuário existente | [`core/limiter.py`](fastapi/core/limiter.py), [`security/jwt.py`](fastapi/security/jwt.py) |
+| **A08 — Data Integrity Failures** | Todos os schemas de entrada herdam de `StrictModel` (`extra="forbid"`): campo desconhecido no corpo devolve 422, fechando a porta para mass assignment | [`models/base.py`](fastapi/models/base.py) |
 
-Ambiente de desenvolvimento:
+### Rate limiting do `POST /auth/token`
+
+**Limite configurado: 5 tentativas por minuto, por IP** (`RATE_LIMIT_LOGIN`,
+ajustável por variável de ambiente). Ao exceder, a API devolve **429** com o
+header `Retry-After`.
+
+**Justificativa técnica.** Sem limite, o `/auth/token` aceita tentativas na
+velocidade que o atacante conseguir enviar, e uma senha fraca cai em minutos. Com
+5 por minuto, varrer uma lista de mil senhas comuns levaria mais de três horas
+por usuário, e um dicionário de um milhão passaria de três meses, tempo
+suficiente para o abuso aparecer em qualquer monitoramento. O custo para o
+usuário legítimo é nulo: quem lembra a senha erra duas ou três vezes, no máximo.
+
+**Por que por IP e não por usuário:** limitar por nome de usuário permitiria que
+um atacante bloqueasse a conta de terceiros só errando a senha de propósito,
+transformando a proteção em negação de serviço. Assim o IP garante que será punido o originário do ataque.
+
+**Limitação conhecida:** o contador vive na memória do processo; com mais de uma
+instância da API, cada uma teria o seu. Em produção, o storage do slowapi
+apontaria para um Redis compartilhado. Registrado em
+[`docs/zap_findings.md`](docs/zap_findings.md).
+
+## Testes
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r fastapi/requirements-dev.txt   # API + pytest
-pip install -r eda/requirements.txt           # apenas para o notebook de EDA
-pytest tests/                                 # rodar da raiz do repositório
-cd fastapi && uvicorn main:app --reload
+pytest tests/
 ```
+
+25 testes, executados contra um SQLite em memória (o banco real nunca é tocado):
+
+| Arquivo | O que cobre |
+|---|---|
+| [`test_seguranca.py`](tests/test_seguranca.py) | Os 3 casos exigidos: acesso sem token (401), acesso a recurso de outro usuário (404) e campo extra no corpo (422) |
+| [`test_auth_jwt.py`](tests/test_auth_jwt.py) | Assinatura adulterada, token expirado, token sem `exp` e `sub` que não corresponde a usuário existente |
+| [`test_headers.py`](tests/test_headers.py) | Headers de segurança presentes (inclusive em respostas de erro), CSP e allowlist de CORS |
+| [`test_rate_limit.py`](tests/test_rate_limit.py) | 429 após exceder o limite, com `Retry-After`; demais rotas não são afetadas |
+| [`test_contrato_erros.py`](tests/test_contrato_erros.py) | Formato padronizado de erro em 401, 404 e 422 |
+| [`test_smoke.py`](tests/test_smoke.py) | A aplicação sobe e o `/health` responde |
+
+## Auditoria com OWASP ZAP
+
+O relatório exportado está em [`docs/zap_report.html`](docs/zap_report.html) e a
+análise dos findings em [`docs/zap_findings.md`](docs/zap_findings.md).
+
+Para reproduzir o scan (passivo, em modo seguro) com a API rodando localmente:
+
+```bash
+docker run --rm -v "$(pwd)/docs:/zap/wrk:rw" zaproxy/zap-stable zap-api-scan.py \
+  -t http://host.docker.internal:8000/openapi.json -f openapi -S \
+  -r zap_report.html -J zap_report.json -I
+```
+
+`-S` é o modo seguro: executa apenas o scan passivo, sem disparar ataques contra
+a aplicação.

@@ -8,7 +8,6 @@ Cada teste roda contra um SQLite **em memória**, isolado: o banco real
 (`fastapi/app.db`) nunca é tocado.
 """
 
-import bcrypt
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
@@ -18,6 +17,7 @@ from core.limiter import set_rate_limiting_enabled
 from db import get_session
 from main import app
 from models.tables import Ticket, User
+from security.users import ADMIN_USERNAME, hash_password
 
 SENHA_PADRAO = "senha-de-teste-123"
 
@@ -48,8 +48,7 @@ def client_fixture(session):
 
 
 def criar_usuario(session: Session, username: str, password: str = SENHA_PADRAO) -> User:
-    hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-    user = User(username=username, hashed_password=hashed)
+    user = User(username=username, hashed_password=hash_password(password))
     session.add(user)
     session.commit()
     session.refresh(user)
@@ -76,6 +75,12 @@ def alice(session) -> User:
 @pytest.fixture
 def bob(session) -> User:
     return criar_usuario(session, "bob")
+
+
+@pytest.fixture
+def admin(session) -> User:
+    """Usuário administrativo — usado nos testes de validação do JWT."""
+    return criar_usuario(session, ADMIN_USERNAME)
 
 
 @pytest.fixture

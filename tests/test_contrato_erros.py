@@ -9,6 +9,8 @@ from security.users import ADMIN_USERNAME
 
 
 def _auth_header():
+    """Token do admin. A fixture `admin` precisa acompanhar o teste: desde o TP2
+    o `sub` é conferido contra a tabela `User`."""
     return {"Authorization": "Bearer " + create_access_token(subject=ADMIN_USERNAME)}
 
 
@@ -25,7 +27,7 @@ def test_erro_401_tem_formato_padronizado(client):
     assert response.headers["WWW-Authenticate"] == "Bearer"
 
 
-def test_erro_422_lista_os_campos_invalidos(client):
+def test_erro_422_lista_os_campos_invalidos(client, admin):
     response = client.post("/predict", headers=_auth_header(), json={})
 
     assert response.status_code == 422

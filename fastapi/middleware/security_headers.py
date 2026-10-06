@@ -1,52 +1,87 @@
-"""Headers de segurança HTTP e CORS — TAREFA 3 (Pessoa 3).
+"""Headers de segurança HTTP e CORS (OWASP A05 — Security Misconfiguration).
 
-`main.py` já chama `add_security_middlewares(app)` desde a fase 0, então a
-Pessoa 3 só precisa implementar esta função — sem tocar em `main.py`.
+`main.py` chama `add_security_middlewares(app)`. Os headers são aplicados a
+**todas** as respostas, inclusive às de erro — um 401 ou um 404 também precisa
+dizer ao navegador que não pode ser exibido em um iframe.
 
-O que precisa ser entregue aqui:
+Headers aplicados e por quê:
 
-1. Middleware que adiciona em TODA resposta:
-   - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
-   - `X-Frame-Options: DENY`
-   - `X-Content-Type-Options: nosniff`
-   - `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`
-     (a API só devolve JSON; atenção que uma CSP muito restritiva quebra a
-     página /docs do Swagger — decidam se liberam o /docs ou se aceitam isso
-     e documentem a escolha no relatório do ZAP)
-   - opcional, mas o ZAP costuma pedir: `Referrer-Policy: no-referrer`,
-     `Permissions-Policy`, e remover o header `server`.
+* `Strict-Transport-Security` — obriga o navegador a só falar HTTPS com este
+  domínio, fechando a janela de downgrade para HTTP em que um atacante na rede
+  leria a senha enviada ao `/auth/token`.
+* `X-Frame-Options: DENY` — a API não pode ser embutida em iframe (clickjacking).
+* `X-Content-Type-Options: nosniff` — impede o navegador de "adivinhar" o tipo do
+  conteúdo e executar como script algo que devolvemos como JSON.
+* `Content-Security-Policy` — a API só devolve JSON, então a política padrão
+  bloqueia qualquer carregamento de recurso. Ver a ressalva sobre o `/docs`.
+* `Referrer-Policy: no-referrer` — evita vazar a URL da API (e qualquer dado no
+  caminho) para sites de terceiros.
+* `Permissions-Policy` — desliga APIs de dispositivo que a API nunca usa.
+* `Cache-Control: no-store` — respostas podem conter token e dados do ticket;
+  não devem ficar em cache de navegador ou proxy.
+* `Cross-Origin-Resource-Policy: same-origin` — impede que outra origem embuta a
+  resposta da API como recurso. Acrescentado após o primeiro scan do ZAP, que
+  apontou a ausência deste header (regra 90004).
+* `server` genérico — o valor padrão (`uvicorn`) entrega a stack para quem está
+  sondando a API.
 
-2. CORS com allowlist explícita, usando `CORS_ORIGINS` de `core.config`.
-   Nunca `allow_origins=["*"]` junto com `allow_credentials=True`.
-   Restringir também métodos e headers ao que a API realmente usa.
-
-Esboço:
-
-    from fastapi import FastAPI, Request
-    from fastapi.middleware.cors import CORSMiddleware
-
-    from core.config import CORS_ORIGINS
-
-    def add_security_middlewares(app: FastAPI) -> None:
-        @app.middleware("http")
-        async def security_headers(request: Request, call_next):
-            response = await call_next(request)
-            response.headers["X-Frame-Options"] = "DENY"
-            ...
-            return response
-
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=CORS_ORIGINS,
-            allow_credentials=True,
-            allow_methods=["GET", "POST"],
-            allow_headers=["Authorization", "Content-Type"],
-        )
+**Ressalva sobre o `/docs`:** a CSP restritiva quebraria o Swagger UI, que além
+de carregar JS do `cdn.jsdelivr.net` executa um `<script>` inline. Em vez de
+afrouxar a política do site inteiro, as rotas de documentação montam a própria
+CSP, autorizando o script inline **pelo hash** — ver `routes/docs.py`. Este
+middleware preserva a CSP que a rota já tiver definido.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+
+from core.config import CORS_ORIGINS
+
+# CSP da API: ela só devolve JSON, então nada pode ser carregado.
+CSP_API = (
+    "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+)
+
+SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+    "Cache-Control": "no-store",
+    "X-Permitted-Cross-Domain-Policies": "none",
+    # Impede que outros sites embutam/leiam as respostas da API como se fossem
+    # um recurso qualquer (apontado pelo ZAP, regra 90004).
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "server": "api",
+}
 
 
 def add_security_middlewares(app: FastAPI) -> None:
-    """TODO(Pessoa 3): headers de segurança + CORS com allowlist."""
-    return None
+    @app.middleware("http")
+    async def security_headers(request: Request, call_next):
+        response = await call_next(request)
+
+        for header, valor in SECURITY_HEADERS.items():
+            response.headers[header] = valor
+
+        # As rotas de documentação montam a própria CSP (com o hash do script
+        # inline do Swagger, ver routes/docs.py). Se a resposta já trouxe uma,
+        # ela é preservada.
+        if "Content-Security-Policy" not in response.headers:
+            response.headers["Content-Security-Policy"] = CSP_API
+
+        return response
+
+    # CORS com allowlist explícita. Nunca "*" junto de allow_credentials: essa
+    # combinação permitiria que qualquer site fizesse requisições autenticadas
+    # em nome do usuário.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Authorization", "Content-Type"],
+        max_age=600,
+    )

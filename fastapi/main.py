@@ -19,7 +19,7 @@ from core.exception_handlers import register_exception_handlers
 from core.limiter import install_rate_limiting
 from db import init_db
 from middleware.security_headers import add_security_middlewares
-from routes import auth, health, predict, tickets
+from routes import auth, docs, health, predict, tickets
 
 
 @asynccontextmanager
@@ -38,6 +38,10 @@ app = FastAPI(
     ),
     version=API_VERSION,
     lifespan=lifespan,
+    # /docs e /redoc são servidos por `routes/docs.py`, que monta a CSP com o
+    # hash do script inline do Swagger em vez de liberar 'unsafe-inline'.
+    docs_url=None,
+    redoc_url=None,
 )
 
 # Tarefa 3 (Pessoa 3) — headers de segurança + CORS: ver middleware/security_headers.py
@@ -49,6 +53,7 @@ install_rate_limiting(app)
 # Toda resposta de erro sai no formato `models.errors.ErrorResponse`.
 register_exception_handlers(app)
 
+app.include_router(docs.router)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(predict.router)

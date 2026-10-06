@@ -1,20 +1,12 @@
 """Testes de segurança obrigatórios do TP2 — TAREFA 6 (Pessoa 2).
 
-Os três casos abaixo estão escritos e marcados com `skip`. Conforme as rotas
-forem implementadas, apague o `pytestmark`/`@pytest.mark.skip` de cada um e
-confirme que passam.
-
 Casos exigidos pelo enunciado:
   (a) acesso sem token            -> 401
   (b) acesso a recurso de outro usuário -> 404 (não 403: não vazar existência)
   (c) campo extra no body         -> 422 (Pydantic com extra="forbid")
 """
 
-import pytest
-
 from tests.conftest import auth_header
-
-pytestmark = pytest.mark.skip(reason="TODO(Pessoa 2): habilitar quando /tickets existir")
 
 
 def test_a_acesso_sem_token_e_negado(client, ticket_de_bob):

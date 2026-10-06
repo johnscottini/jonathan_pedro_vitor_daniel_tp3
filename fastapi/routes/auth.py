@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlmodel import Session
 
 from core.limiter import login_rate_limit
+from db import get_session
 from models.auth import Token
 from models.errors import ErrorResponse
 from security.jwt import create_access_token
@@ -21,20 +23,25 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     },
 )
 @login_rate_limit
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
-    """Autentica o usuário e emite um JWT.
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    session: Session = Depends(get_session),
+):
+    """Autentica o usuário contra a tabela `User` e emite um JWT.
 
     O parâmetro `request` existe porque o rate limiter (slowapi) precisa dele
     para identificar o IP de origem — não remover.
 
-    TODO(Pessoa 2): `authenticate_user` passa a consultar a tabela `User` via
-    sessão do SQLModel (`Depends(get_session)`) em vez do usuário fixo no código.
+    A mensagem de erro é a mesma para usuário inexistente e senha errada: dizer
+    qual dos dois falhou entregaria ao atacante a lista de usuários válidos.
     """
-    if not authenticate_user(form_data.username, form_data.password):
+    user = authenticate_user(session, form_data.username, form_data.password)
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(subject=form_data.username)
+    access_token = create_access_token(subject=user.username)
     return Token(access_token=access_token)
