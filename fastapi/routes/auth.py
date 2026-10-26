@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
 from core.limiter import login_rate_limit
-from db import get_session
+from sqlite_database import get_session
 from models.auth import Token
 from models.errors import ErrorResponse
 from security.jwt import create_access_token

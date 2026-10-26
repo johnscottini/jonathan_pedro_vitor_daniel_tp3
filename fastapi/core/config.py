@@ -32,7 +32,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 # --- Banco de dados --------------------------------------------------------
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "app.db"))
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "database.db"))
 
 # --- CORS (Pessoa 3) -------------------------------------------------------
 # Allowlist explícita. Nunca usar "*" junto com credenciais (OWASP A05).

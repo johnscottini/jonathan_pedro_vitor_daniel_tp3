@@ -23,7 +23,7 @@ from jose import JWTError, jwt
 from sqlmodel import Session
 
 from core.config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY
-from db import get_session
+from sqlite_database import get_session
 from models.tables import User
 from security.users import get_user
 

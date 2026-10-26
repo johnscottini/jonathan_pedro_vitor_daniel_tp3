@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from core.config import API_VERSION
 from core.exception_handlers import register_exception_handlers
 from core.limiter import install_rate_limiting
-from db import init_db
+from sqlite_database import init_db
 from middleware.security_headers import add_security_middlewares
 from routes import auth, docs, health, predict, tickets
 

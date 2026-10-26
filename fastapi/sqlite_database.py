@@ -1,4 +1,11 @@
-"""Engine, sessão e inicialização do banco (SQLModel + SQLite).
+"""Engine, sessão e criação do banco SQLite (`fastapi/database.db`).
+
+Pode ser executado direto para criar o banco do zero, com as tabelas e os
+usuários iniciais:
+
+    python fastapi/sqlite_database.py
+
+Os tickets de exemplo ficam em `sqlite_populate.py`.
 
 Toda query do projeto passa por uma `Session` do SQLModel, ou seja, é
 parametrizada pelo SQLAlchemy. Não existe SQL cru (string concatenada) em
@@ -29,7 +36,7 @@ def init_db() -> None:
     SQLModel.metadata.create_all(engine)
 
     # Import local: `security.users` importa `models.tables`, e importar aqui no
-    # topo criaria um ciclo com `security.jwt`, que depende de `db.get_session`.
+    # topo criaria um ciclo com `security.jwt`, que depende de `sqlite_database.get_session`.
     from security.users import criar_usuarios_iniciais
 
     with Session(engine) as session:
@@ -40,3 +47,8 @@ def get_session() -> Iterator[Session]:
     """Dependência do FastAPI: uma sessão de banco por requisição."""
     with Session(engine) as session:
         yield session
+
+
+if __name__ == "__main__":
+    init_db()
+    print(f"[db] banco pronto em {DATABASE_URL}")

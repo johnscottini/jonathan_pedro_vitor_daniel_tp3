@@ -19,7 +19,7 @@ transformando a proteção em negação de serviço. O IP pune a origem do abuso
 **Limitação conhecida:** o contador vive na memória do processo. Com mais de uma
 instância da API, cada uma teria seu próprio contador — em produção, o storage
 do slowapi apontaria para um Redis compartilhado. Registrado como limitação
-aceita em `docs/zap_findings.md`.
+aceita em `zap/tp2/zap_findings.md`.
 """
 
 from typing import Callable, TypeVar

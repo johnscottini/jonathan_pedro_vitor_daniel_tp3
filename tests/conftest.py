@@ -5,7 +5,7 @@ Os nomes das fixtures fazem parte do contrato: `session`, `client`, `alice`,
 fixture, adicione aqui em vez de recriar a mesma coisa em cada arquivo.
 
 Cada teste roda contra um SQLite **em memória**, isolado: o banco real
-(`fastapi/app.db`) nunca é tocado.
+(`fastapi/database.db`) nunca é tocado.
 """
 
 import pytest
@@ -14,7 +14,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
 from core.limiter import set_rate_limiting_enabled
-from db import get_session
+from sqlite_database import get_session
 from main import app
 from models.tables import Ticket, User
 from security.users import ADMIN_USERNAME, hash_password

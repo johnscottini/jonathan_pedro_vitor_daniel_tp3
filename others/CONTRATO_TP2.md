@@ -142,14 +142,23 @@ permitiria que o atacante travasse a conta de um terceiro (negação de serviço
   derrubaria a suíte com 429.
 - Os 3 testes obrigatórios já estão escritos em `tests/test_seguranca.py`, com
   `skip`. A Pessoa 2 remove o `pytestmark` conforme implementa as rotas.
+- **Teste do 429 (obrigatório para a rubrica).** Como a suíte desliga o rate
+  limit, nada provaria o 429 sem um teste que o ligue de volta. O esqueleto está
+  em `tests/test_rate_limit.py`, também com `skip`: a Pessoa 3 liga o limiter na
+  própria fixture do teste, dispara mais tentativas do que o limite e exige 429
+  na última. É a evidência que vale mais do que um print de `curl`, porque roda
+  junto com `pytest tests/`.
+- Testes que já existem e **não podem quebrar**: `tests/test_smoke.py`,
+  `tests/test_contrato_erros.py` (formato padronizado de erro) e
+  `tests/test_auth_jwt.py` (assinatura, expiração e validação do `sub`) — estes
+  dois últimos são as correções do retorno do TP1.
 
 ---
 
 ## 7. EDA — o que precisa ser decidido pela Pessoa 1
 
 > Atualizado após o retorno do professor no TP1: as hipóteses da seção 6 do
-> notebook foram reescritas (ver [`CORRECOES_TP1.md`](CORRECOES_TP1.md)). Cada
-> uma agora já traz o teste que a verifica.
+> notebook foram reescritas e cada uma já traz o teste que a verifica.
 
 **Decisão:** o teste de hipótese formal exigido pelo TP2 é o da **H2**, com
 **Mann-Whitney**:
@@ -167,9 +176,40 @@ As demais hipóteses pedem **qui-quadrado** e podem entrar como análise
 complementar (a H3, em especial, já tem p ≈ 0,98 e é o achado de maior impacto
 para a modelagem: os dois campos de rótulo são independentes entre si).
 
-Entregáveis da Pessoa 1: heatmap de correlação, pelo menos 2 scatter plots, o
-teste de hipótese com p-valor interpretado, e o `docs/relatorio_eda.md` com as
-seções problema / dados / análise / insights / limitações / próximos passos.
+### Antes do heatmap: preparar as variáveis numéricas
+
+**Atenção, senão o heatmap sai vazio.** O dataset tem apenas **duas** colunas
+numéricas de origem — `Customer Age` e `Customer Satisfaction Rating` — e uma
+matriz de correlação 2×2 não demonstra a rubrica. Monte o conjunto numérico
+antes de chamar o `sns.heatmap`, usando as derivadas que o notebook já cria na
+seção 4 e mais algumas:
+
+| Variável | Origem |
+|---|---|
+| `Customer Age` | original |
+| `Customer Satisfaction Rating` | original (só tickets `Closed`) |
+| `description_length` | já criada na seção 4 |
+| `purchase_year`, `purchase_month` | já criadas na seção 4 |
+| `priority_ordinal` | codificar `Ticket Priority`: Low=1, Medium=2, High=3, Critical=4 |
+| `is_closed`, `has_satisfaction_rating` | já criadas na seção 4 (booleanas → int) |
+| `horas_ate_primeira_resposta` | opcional: `First Response Time` − `Date of Purchase`, **sempre com a ressalva** da seção 3 (os timestamps do dataset são causalmente inconsistentes) |
+
+Use `df_num.corr()` com `annot=True` e comente o resultado: correlações próximas
+de zero entre quase tudo são o esperado aqui, e isso **é** um achado — basta
+interpretá-lo, não maquiá-lo.
+
+### Checklist da Pessoa 1 (cada item é uma rubrica)
+
+- [ ] Heatmap de correlação com `seaborn`, sobre a matriz numérica preparada acima
+- [ ] Pelo menos 2 scatter plots relevantes
+- [ ] Teste de hipótese com SciPy, com o **p-valor interpretado em texto**
+- [ ] Narrativa em linguagem acessível que cite **explicitamente** a hipótese do
+      TP1 que está sendo testada (ex.: "a H2 formulada no TP1 dizia que…")
+- [ ] `docs/relatorio_eda.md` com as seções problema / dados / análise /
+      insights / limitações / próximos passos
+- [ ] Na seção de próximos passos, **enunciar a pergunta de classificação do
+      TP3** e ligar cada insight a ela — inclusive qual coluna será o alvo do
+      classificador, decisão que a H3 torna inevitável
 
 ---
 
@@ -188,12 +228,37 @@ Pessoa 3 revisa as rotas e os testes.
 
 **Entregáveis (checklist do enunciado):**
 
-- [ ] `eda/eda.ipynb` com heatmap, scatter plots e teste de hipótese interpretado
-- [ ] API com `extra="forbid"`, SQLModel, ownership, headers, CORS e rate limit
-- [ ] `docs/zap_report.html` + `docs/zap_findings.md` (todo Medium/High documentado)
-- [ ] `pytest tests/` passando com pelo menos 3 testes de segurança
-- [ ] `docs/relatorio_eda.md` com as 6 seções
-- [ ] README atualizado para o TP2 (estrutura, como rodar, limite de rate e justificativa)
+- [x] `eda/eda.ipynb` com heatmap, scatter plots e teste de hipótese interpretado (seção 7)
+- [x] API com `extra="forbid"`, SQLModel, ownership, headers, CORS e rate limit
+- [x] `docs/zap_report.html` + `docs/zap_findings.md`
+- [x] `pytest tests/` passando — 25 testes, incluindo os 3 obrigatórios e o do 429
+- [x] `docs/relatorio_eda.md` com as 6 seções e a ligação explícita com o TP3
+- [x] README atualizado para o TP2 (estrutura, como rodar, limite de rate e justificativa)
+
+**Dono do README final:** Pessoa 3 — já vai escrever a justificativa do rate
+limit, então centraliza a atualização e as Pessoas 1 e 2 só revisam.
+
+---
+
+## 9. Mapa das rubricas
+
+Cada rubrica da avaliação, quem a demonstra e qual artefato serve de evidência.
+Antes de entregar, confira esta tabela de cima a baixo.
+
+| Rubrica | Dono | Evidência no repositório |
+|---|---|---|
+| Heatmap de correlação com seaborn | Pessoa 1 | `eda/eda.ipynb`, com a matriz numérica preparada (seção 7 deste contrato) |
+| Teste de hipótese formal com SciPy e p-valor interpretado | Pessoa 1 | `eda/eda.ipynb` — Mann-Whitney da H2 |
+| Narrativa acessível conectada às hipóteses do TP1 | Pessoa 1 | `eda/eda.ipynb` + `docs/relatorio_eda.md`, citando a hipótese pelo número |
+| API rejeita campo extra com 422 | Pessoa 2 | `models/base.py::StrictModel` em **todos** os schemas de entrada (falta `PredictRequest`) + `tests/test_seguranca.py` caso (c) |
+| Recurso por ID com verificação de ownership | Pessoa 2 | `routes/tickets.py` + `tests/test_seguranca.py` caso (b) |
+| HSTS, X-Frame-Options e X-Content-Type-Options nas respostas | Pessoa 3 | `middleware/security_headers.py` + teste que confira os headers |
+| `POST /auth/token` devolve 429 | Pessoa 3 | `core/limiter.py` + `tests/test_rate_limit.py` |
+| Limite e justificativa documentados | Pessoa 3 | README (texto já redigido na seção 5 deste contrato) |
+| Relatório ZAP exportado no repositório | Pessoa 3 | `docs/zap_report.html` |
+| Cada finding Medium/High com o que é, por que é problema e o que foi feito | Pessoa 3 | `docs/zap_findings.md` — se o scan não achar nenhum Medium/High, **registrar isso explicitamente**, com a contagem por severidade, em vez de deixar a seção vazia |
+| Relatório de EDA com problema, dados, análise, insights e próximos passos | Pessoa 1 | `docs/relatorio_eda.md` |
+| Relatório conecta os insights à pergunta de classificação do TP3 | Pessoa 1 | `docs/relatorio_eda.md`, seção 6 |
 
 ---
 

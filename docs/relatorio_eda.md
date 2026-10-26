@@ -1,7 +1,7 @@
 # Relatório de EDA — Customer Support Ticket Dataset
 
 Documento autocontido: reúne o que a análise exploratória do
-[`eda/eda.ipynb`](../eda/eda.ipynb) mostrou e o que isso implica para o modelo de
+[`eda/eda_tp3.ipynb`](../eda/eda_tp3.ipynb) mostrou e o que isso implica para o modelo de
 classificação de intenção. Os números citados vêm das saídas do notebook.
 
 ---
