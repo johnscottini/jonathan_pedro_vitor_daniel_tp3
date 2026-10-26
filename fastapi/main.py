@@ -17,15 +17,15 @@ from fastapi import FastAPI
 from core.config import API_VERSION
 from core.exception_handlers import register_exception_handlers
 from core.limiter import install_rate_limiting
-from sqlite_database import init_db
+from sqlite_database import criar_banco
 from middleware.security_headers import add_security_middlewares
-from routes import auth, docs, health, predict, tickets
+from routes import auth, docs, health, predict, predictions, tickets
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Cria tabelas e usuários iniciais quando a aplicação sobe."""
-    init_db()
+    """Cria o banco (tabelas e dados iniciais) se ainda não existir, com `sqlite3`."""
+    criar_banco()
     yield
 
 
@@ -44,8 +44,8 @@ app = FastAPI(
     version=API_VERSION,
     openapi_tags=[
         {"name": "health", "description": "Monitoramento — rota pública."},
-        {"name": "auth", "description": "Login e emissão do token JWT (limitado a 5 tentativas/min por IP)."},
-        {"name": "predict", "description": "Predição de intenção do texto do ticket — requer token."},
+        {"name": "auth", "description": "Login e emissão do token JWT (limitado a 10 tentativas/min por IP)."},
+        {"name": "predict", "description": "Predição de intenção do texto do ticket e consulta às predições do próprio usuário — requer token."},
         {"name": "tickets", "description": "Tickets do usuário autenticado, com verificação de dono — requer token."},
     ],
     lifespan=lifespan,
@@ -69,4 +69,5 @@ app.include_router(docs.router)
 app.include_router(health.router)
 app.include_router(auth.router)
 app.include_router(predict.router)
+app.include_router(predictions.router)
 app.include_router(tickets.router)

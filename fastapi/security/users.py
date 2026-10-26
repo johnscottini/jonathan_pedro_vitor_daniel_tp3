@@ -16,8 +16,9 @@ from models.tables import User
 
 ADMIN_USERNAME = "admin"
 
-# Usuários criados na primeira execução. São credenciais de desenvolvimento,
-# documentadas no README; em produção viriam de um fluxo de cadastro.
+# Usuários criados por `sqlite_database.py` (com `sqlite3`) na primeira execução.
+# São credenciais de desenvolvimento, documentadas no README; em produção viriam
+# de um fluxo de cadastro.
 SEED_USERS = {
     ADMIN_USERNAME: "admin123",
     "alice": "alice123",
@@ -54,14 +55,3 @@ def authenticate_user(session: Session, username: str, password: str) -> Optiona
         return None
     return user
 
-
-def criar_usuarios_iniciais(session: Session) -> None:
-    """Cria os usuários do `SEED_USERS` que ainda não existirem."""
-    criados = []
-    for username, password in SEED_USERS.items():
-        if get_user(session, username) is None:
-            session.add(User(username=username, hashed_password=hash_password(password)))
-            criados.append(username)
-    if criados:
-        session.commit()
-        print(f"[seed] usuários criados: {', '.join(criados)}")

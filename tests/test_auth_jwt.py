@@ -21,7 +21,7 @@ def _get(client, token):
 def test_token_do_admin_e_aceito(client, admin):
     response = _get(client, create_access_token(subject=ADMIN_USERNAME))
     assert response.status_code == 200
-    assert set(response.json()) == {"intent", "confidence"}
+    assert set(response.json()) == {"id", "intent", "confidence"}
 
 
 def test_token_assinado_mas_de_outro_sub_e_recusado(client, admin):

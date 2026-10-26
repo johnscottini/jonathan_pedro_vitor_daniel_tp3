@@ -34,10 +34,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 # --- Banco de dados --------------------------------------------------------
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "database.db"))
 
+# Caminho do arquivo SQLite, usado pelos scripts `sqlite_database.py` e
+# `sqlite_populate.py` (módulo `sqlite3`, que recebe um caminho e não uma URL).
+SQLITE_PATH = DATABASE_URL.removeprefix("sqlite:///")
+
 # --- CORS (Pessoa 3) -------------------------------------------------------
 # Allowlist explícita. Nunca usar "*" junto com credenciais (OWASP A05).
 CORS_ORIGINS = _csv_env("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173")
 
 # --- Rate limiting (Pessoa 3) ---------------------------------------------
-# Formato aceito pelo slowapi, ex.: "5/minute".
-RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_LOGIN", "5/minute")
+# Formato aceito pelo slowapi. O enunciado do TP2 fixa no máximo 10 requisições
+# por minuto por cliente no endpoint de autenticação.
+RATE_LIMIT_LOGIN = os.getenv("RATE_LIMIT_LOGIN", "10/minute")

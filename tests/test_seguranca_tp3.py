@@ -116,6 +116,37 @@ def test_listagem_mostra_apenas_os_tickets_do_proprio_usuario(
     assert [t["id"] for t in lista_bob.json()] == [ticket_de_bob.id]
 
 
+def test_usuario_nao_le_predicao_de_outro_usuario(client, token_alice, prediction_de_bob):
+    """BOLA na tabela `prediction`: o `owner_id` é comparado com o usuário do token."""
+    path = "/predictions/" + str(prediction_de_bob.id)
+    resposta = client.get(path, headers=auth_header(token_alice))
+
+    _assert_erro_padronizado(resposta, 404, "not_found", path)
+    assert prediction_de_bob.text not in resposta.text
+
+    # A listagem da alice também não mostra a predição do bob.
+    lista = client.get("/predictions", headers=auth_header(token_alice))
+    assert lista.status_code == 200
+    assert lista.json() == []
+
+
+def test_predicao_fica_registrada_com_o_dono_do_token(client, token_alice, token_bob, alice):
+    criada = client.post("/predict", headers=auth_header(token_alice), json={"text": "I want a refund"})
+    assert criada.status_code == 200
+    corpo = criada.json()
+    assert corpo["intent"] == "refund_request"
+
+    # A alice consegue consultar a própria predição...
+    propria = client.get("/predictions/" + str(corpo["id"]), headers=auth_header(token_alice))
+    assert propria.status_code == 200
+    assert propria.json()["owner_id"] == alice.id
+    assert propria.json()["text"] == "I want a refund"
+
+    # ...e o bob, autenticado, recebe 404 para o mesmo ID.
+    alheia = client.get("/predictions/" + str(corpo["id"]), headers=auth_header(token_bob))
+    assert alheia.status_code == 404
+
+
 # --- 3. Validação de entrada ------------------------------------------------
 
 
@@ -186,6 +217,8 @@ def test_rotas_protegidas_exigem_token(client):
         ("get", "/tickets/1", None),
         ("post", "/tickets", {"subject": "a", "description": "b", "ticket_type": "c"}),
         ("post", "/predict", {"text": "quero reembolso"}),
+        ("get", "/predictions", None),
+        ("get", "/predictions/1", None),
     ]
     for metodo, path, corpo in rotas:
         resposta = getattr(client, metodo)(path, json=corpo) if corpo else getattr(client, metodo)(path)

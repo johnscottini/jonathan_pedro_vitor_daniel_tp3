@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from models.base import StrictModel
@@ -16,5 +18,17 @@ class PredictRequest(StrictModel):
 
 
 class PredictResponse(BaseModel):
+    id: int = Field(..., description="ID da predição registrada, para consulta em `GET /predictions/{id}`", examples=[1])
     intent: str = Field(..., description="Intenção prevista", examples=["refund_request"])
     confidence: float = Field(..., ge=0, le=1, description="Confiança da previsão (0 a 1)", examples=[0.5])
+
+
+class PredictionRead(BaseModel):
+    """Uma predição registrada, como devolvida por `GET /predictions`."""
+
+    id: int
+    owner_id: int
+    text: str
+    intent: str
+    confidence: float
+    created_at: datetime

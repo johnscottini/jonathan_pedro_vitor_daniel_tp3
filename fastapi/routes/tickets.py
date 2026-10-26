@@ -21,7 +21,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlmodel import Session, select
 
-from sqlite_database import get_session
+from core.database import get_session
 from models.errors import ErrorResponse
 from models.tables import Ticket, User
 from models.ticket import TicketCreate, TicketRead

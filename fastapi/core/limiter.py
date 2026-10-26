@@ -1,16 +1,17 @@
 """Rate limiting do endpoint de autenticação (OWASP A07 — Identification and
 Authentication Failures).
 
-**Limite configurado:** 5 tentativas por minuto por IP no `POST /auth/token`
+**Limite configurado:** 10 tentativas por minuto por IP no `POST /auth/token`
 (`RATE_LIMIT_LOGIN`, ajustável por variável de ambiente).
 
 **Justificativa técnica.** Sem limite, o `/auth/token` aceita tentativas na
 velocidade que o atacante conseguir enviar, e uma senha fraca cai em minutos.
-Com 5 tentativas por minuto, varrer uma lista de mil senhas comuns levaria mais
-de três horas por usuário, e um dicionário de um milhão passaria de três meses —
+Com 10 tentativas por minuto, varrer uma lista de mil senhas comuns levaria mais
+de uma hora e meia por usuário, e um dicionário de um milhão passaria de dois
+meses —
 tempo suficiente para que o abuso apareça em qualquer monitoramento. O custo
 para quem é legítimo é nulo: um usuário que lembra a senha erra duas ou três
-vezes, no máximo.
+vezes, no máximo, e fica muito abaixo do teto de 10.
 
 **Por que por IP e não por usuário:** limitar por nome de usuário permitiria que
 um atacante bloqueasse a conta de terceiros só errando a senha de propósito,

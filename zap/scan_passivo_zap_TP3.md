@@ -102,7 +102,7 @@ marcadas no código com comentários `ZAP TP3: <finding> — corrigido aqui`.
 | Non-Storable Content (10049) | API e `/docs` | Comportamento desejado: todas as respostas saem com `Cache-Control: no-store`, para que tokens e dados de tickets não fiquem em cache de navegador ou proxy |
 | Modern Web Application (10109) | `/docs` | Apenas informa que a página é montada por JavaScript (Swagger UI). Não é uma vulnerabilidade |
 | A Client Error response code was returned (100000) | API | São os 401/404/422 esperados: o ZAP chamou rotas protegidas sem token e com dados de exemplo |
-| Authentication Request Identified (10111) | `/auth/token` | O ZAP identificou o endpoint de login. Ele é protegido por rate limit (429 após 5 tentativas/min por IP) |
+| Authentication Request Identified (10111) | `/auth/token` | O ZAP identificou o endpoint de login. Ele é protegido por rate limit (429 após 10 tentativas/min por IP) |
 
 ## Controles que o scan confirma (já existentes)
 

@@ -297,12 +297,12 @@ termina com erro. Os resultados ficam na aba
 
 ### Rate limiting do `POST /auth/token`
 
-**Limite configurado: 5 tentativas por minuto, por IP** (`RATE_LIMIT_LOGIN`).
+**Limite configurado: 10 tentativas por minuto, por IP** (`RATE_LIMIT_LOGIN`).
 Ao exceder, a API devolve **429** com o header `Retry-After`.
 
-**Justificativa técnica.** Sem limite, uma senha fraca cai em minutos. Com 5
-tentativas por minuto, varrer mil senhas comuns leva mais de três horas por
-usuário, e um dicionário de um milhão passa de três meses, tempo suficiente para
+**Justificativa técnica.** Sem limite, uma senha fraca cai em minutos. Com 10
+tentativas por minuto, varrer mil senhas comuns leva mais de uma hora e meia por
+usuário, e um dicionário de um milhão passa de dois meses, tempo suficiente para
 o abuso aparecer em qualquer monitoramento. O usuário legítimo erra duas ou três
 vezes, no máximo.
 

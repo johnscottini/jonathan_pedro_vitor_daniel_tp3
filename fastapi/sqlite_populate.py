@@ -1,29 +1,28 @@
-"""População inicial do banco com tickets de exemplo.
+"""População do banco com tickets e predições de exemplo, usando `sqlite3`.
 
 Uso, a partir da raiz do repositório:
 
     python fastapi/sqlite_populate.py
 
-Garante as tabelas e os usuários do seed (`sqlite_database.init_db`) e cria
-alguns tickets para cada usuário, tirados do Customer Support Ticket Dataset.
-Cada usuário recebe tickets diferentes, para que o controle de ownership (BOLA)
-possa ser demonstrado com o banco real: o `bob` não enxerga os tickets da
-`alice`, e vice-versa.
+Primeiro garante as tabelas e os dados iniciais (`sqlite_database.criar_banco`).
+Depois insere, para cada usuário, alguns tickets tirados do Customer Support
+Ticket Dataset, além de uma predição feita sobre a descrição de cada ticket.
+Cada usuário recebe recursos diferentes, para que o controle de ownership (BOLA)
+possa ser demonstrado com o banco real: o `bob` não enxerga os tickets nem as
+predições da `alice`, e vice-versa.
 
-O script é idempotente: rodar de novo não duplica tickets, porque cada um é
-identificado pelo par (dono, assunto, descrição) antes de ser inserido.
+O script é idempotente: antes de inserir, confere se o mesmo recurso já existe
+para aquele dono. Todo valor entra no SQL como parâmetro (`?`).
 """
 
 import csv
-from pathlib import Path
-from typing import Dict, List
+import sqlite3
+from contextlib import closing
+from typing import Dict, List, Tuple
 
-from sqlmodel import Session, select
-
-from core.config import BASE_DIR
-from models.tables import Ticket
-from security.users import ADMIN_USERNAME, get_user
-from sqlite_database import engine, init_db
+from core.config import BASE_DIR, SQLITE_PATH
+from security.users import ADMIN_USERNAME
+from sqlite_database import agora, conectar, criar_banco, id_do_usuario, inserir_prediction
 
 CSV_PATH = BASE_DIR.parent / "data" / "customer_support_tickets.csv"
 
@@ -43,52 +42,59 @@ def _ler_linhas(ids: List[str]) -> Dict[str, dict]:
         return {row["Ticket ID"]: row for row in csv.DictReader(arquivo) if row["Ticket ID"] in wanted}
 
 
-def _ticket_da_linha(row: dict, owner_id: int) -> Ticket:
+def _valores_do_ticket(row: dict, owner_id: int) -> Tuple:
     # O dataset traz o placeholder `{product_purchased}` no texto (insight I4 da
     # EDA); aqui ele é trocado pelo produto real para o exemplo ficar legível.
     descricao = row["Ticket Description"].replace("{product_purchased}", row["Product Purchased"])
-    return Ticket(
-        owner_id=owner_id,
-        subject=row["Ticket Subject"][:200],
-        description=descricao[:4000],
-        ticket_type=row["Ticket Type"][:50],
-        priority=row["Ticket Priority"][:20],
-        channel=row["Ticket Channel"][:20],
-        status=row["Ticket Status"][:30],
+    return (
+        owner_id,
+        row["Ticket Subject"][:200],
+        descricao[:4000],
+        row["Ticket Type"][:50],
+        row["Ticket Priority"][:20],
+        row["Ticket Channel"][:20],
+        row["Ticket Status"][:30],
+        agora(),
     )
 
 
-def popular(session: Session) -> int:
-    """Insere os tickets de exemplo que ainda não existem. Devolve quantos criou."""
+def popular(conn: sqlite3.Connection) -> Tuple[int, int]:
+    """Insere os tickets e as predições que ainda não existem. Devolve (tickets, predições)."""
     todos_ids = [i for ids in TICKETS_POR_USUARIO.values() for i in ids]
     linhas = _ler_linhas(todos_ids)
-    criados = 0
+    tickets = predictions = 0
 
     for username, ids in TICKETS_POR_USUARIO.items():
-        user = get_user(session, username)
-        if user is None:
+        owner_id = id_do_usuario(conn, username)
+        if owner_id is None:
             continue
         for ticket_id in ids:
-            ticket = _ticket_da_linha(linhas[ticket_id], user.id)
-            # Consulta parametrizada pelo SQLModel — nada de SQL cru (OWASP A03).
-            existente = session.exec(
-                select(Ticket).where(
-                    Ticket.owner_id == user.id,
-                    Ticket.subject == ticket.subject,
-                    Ticket.description == ticket.description,
+            valores = _valores_do_ticket(linhas[ticket_id], owner_id)
+            existe = conn.execute(
+                "SELECT 1 FROM ticket WHERE owner_id = ? AND subject = ? AND description = ?",
+                valores[:3],
+            ).fetchone()
+            if not existe:
+                conn.execute(
+                    "INSERT INTO ticket (owner_id, subject, description, ticket_type, "
+                    "priority, channel, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    valores,
                 )
-            ).first()
-            if existente is None:
-                session.add(ticket)
-                criados += 1
+                tickets += 1
+            # Uma predição feita pelo mesmo usuário sobre o texto do ticket.
+            predictions += inserir_prediction(conn, owner_id, valores[2])
 
-    session.commit()
-    return criados
+    return tickets, predictions
 
 
 if __name__ == "__main__":
-    init_db()
-    with Session(engine) as session:
-        criados = popular(session)
-        total = len(session.exec(select(Ticket)).all())
-    print(f"[populate] {criados} tickets criados ({total} no banco)")
+    criar_banco()
+    with closing(conectar()) as conn:
+        with conn:
+            tickets, predictions = popular(conn)
+        total_t = conn.execute("SELECT COUNT(*) FROM ticket").fetchone()[0]
+        total_p = conn.execute("SELECT COUNT(*) FROM prediction").fetchone()[0]
+    print(
+        f"[populate] {tickets} tickets e {predictions} predições criados "
+        f"({total_t} tickets e {total_p} predições em {SQLITE_PATH})"
+    )

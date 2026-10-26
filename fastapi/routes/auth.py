@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
 from core.limiter import login_rate_limit
-from sqlite_database import get_session
+from core.database import get_session
 from models.auth import Token
 from models.errors import ErrorResponse
 from security.jwt import create_access_token
@@ -22,7 +22,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
         "token JWT assinado (HS256), válido por 30 minutos. Use-o no header "
         "`Authorization: Bearer <token>` das rotas protegidas.\n\n"
         "Usuário inexistente e senha errada recebem a mesma resposta 401.\n\n"
-        "**Rate limit:** 5 tentativas por minuto por IP; acima disso a resposta é 429 "
+        "**Rate limit:** 10 tentativas por minuto por IP; acima disso a resposta é 429 "
         "com o header `Retry-After`."
     ),
     responses={

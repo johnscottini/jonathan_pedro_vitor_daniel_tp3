@@ -10,6 +10,8 @@ ROTAS_PROTEGIDAS = [
     ("get", "/tickets"),
     ("post", "/tickets"),
     ("get", "/tickets/{ticket_id}"),
+    ("get", "/predictions"),
+    ("get", "/predictions/{prediction_id}"),
 ]
 ROTAS_PUBLICAS = [("get", "/health"), ("post", "/auth/token")]
 

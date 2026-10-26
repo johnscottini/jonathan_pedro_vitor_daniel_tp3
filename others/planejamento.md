@@ -71,15 +71,29 @@ Por que essa escolha:
 
 ## 3. Alvo para o teste adversarial (TP4/TP5)
 
+A API roda na máquina da equipe e fica acessível pela internet por um
+**Cloudflare Tunnel**: o `cloudflared` abre uma conexão de saída até a
+Cloudflare, que publica uma URL HTTPS e encaminha as requisições para o
+`localhost:8000`. Não é preciso abrir portas no roteador nem contratar
+hospedagem.
+
 | Item | Valor |
 |---|---|
-| **Alvo autorizado** | `http://localhost:8000` — API FastAPI da equipe (`uvicorn main:app`, a partir de `fastapi/`) |
-| Documentação do alvo | `http://localhost:8000/docs` e `http://localhost:8000/openapi.json` |
-| Escopo | `/auth/token`, `/predict`, `/tickets`, `/tickets/{id}`, `/health`, `/docs` |
+| **Alvo autorizado (URL pública)** | **https://guest-pepper-very-hopkins.trycloudflare.com** |
+| Documentação do alvo | https://guest-pepper-very-hopkins.trycloudflare.com/docs e `/openapi.json` |
+| Origem | API FastAPI da equipe em `http://localhost:8000` (`uvicorn main:app --no-server-header`, a partir de `fastapi/`) |
+| Escopo | `/auth/token`, `/predict`, `/predictions`, `/predictions/{id}`, `/tickets`, `/tickets/{id}`, `/health`, `/docs` |
 | Fora do escopo | Qualquer outro host, serviço ou porta da máquina; ataques de negação de serviço volumétricos |
 | Contas de teste | `alice`, `bob` e `admin`, criadas por `fastapi/sqlite_database.py` (senhas no README) |
 
-> **TODO (antes do TP4):** a API ainda não tem deploy público. Quando o
-> ambiente for publicado (VM, container ou serviço de nuvem), substituir
-> `http://localhost:8000` pela URL ou IP definitivo nesta tabela e avisar a
-> equipe que fará o teste adversarial.
+Como reproduzir o túnel, com a API já rodando:
+
+```bash
+cloudflared tunnel --url http://localhost:8000
+```
+
+> **Atenção:** a URL acima é de um *quick tunnel*, gerado sem conta na
+> Cloudflare. Ela só responde enquanto a API e o `cloudflared` estão rodando, e
+> **muda a cada execução**. Para o ataque do TP4, a equipe sobe os dois
+> processos durante a janela combinada com a equipe adversária e envia a URL
+> gerada naquele momento.

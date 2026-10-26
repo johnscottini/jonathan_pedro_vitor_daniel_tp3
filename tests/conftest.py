@@ -1,7 +1,8 @@
 """Infraestrutura de testes — montada na fase 0, usada pelas Pessoas 2 e 3.
 
 Os nomes das fixtures fazem parte do contrato: `session`, `client`, `alice`,
-`bob`, `token_alice`, `token_bob`, `ticket_de_bob`, `limiter_ligado`. Se precisar de outra
+`bob`, `token_alice`, `token_bob`, `ticket_de_bob`, `prediction_de_bob`,
+`limiter_ligado`. Se precisar de outra
 fixture, adicione aqui em vez de recriar a mesma coisa em cada arquivo.
 
 Cada teste roda contra um SQLite **em memória**, isolado: o banco real
@@ -15,9 +16,9 @@ from sqlmodel.pool import StaticPool
 
 from core.config import RATE_LIMIT_LOGIN
 from core.limiter import reset_rate_limiting, set_rate_limiting_enabled
-from sqlite_database import get_session
+from core.database import get_session
 from main import app
-from models.tables import Ticket, User
+from models.tables import Prediction, Ticket, User
 from security.users import ADMIN_USERNAME, hash_password
 
 SENHA_PADRAO = "senha-de-teste-123"
@@ -112,6 +113,18 @@ def ticket_de_bob(session, bob) -> Ticket:
     session.commit()
     session.refresh(ticket)
     return ticket
+
+
+@pytest.fixture
+def prediction_de_bob(session, bob) -> Prediction:
+    """Uma predição que pertence ao bob — a vítima do teste de BOLA nas predições."""
+    prediction = Prediction(
+        owner_id=bob.id, text="Please cancel my subscription.", intent="cancellation_request", confidence=0.5
+    )
+    session.add(prediction)
+    session.commit()
+    session.refresh(prediction)
+    return prediction
 
 
 @pytest.fixture
