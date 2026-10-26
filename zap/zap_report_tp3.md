@@ -19,12 +19,12 @@ ZAP by [Checkmarx](https://checkmarx.com/).
 
 | Level | Reason | Site | Description | Statistic |
 | --- | --- | --- | --- | --- |
-| Info | Informational | http://host.docker.internal:8000 | Percentage of responses with status code 2xx | 28 % |
-| Info | Informational | http://host.docker.internal:8000 | Percentage of responses with status code 4xx | 71 % |
+| Info | Informational | http://host.docker.internal:8000 | Percentage of responses with status code 2xx | 22 % |
+| Info | Informational | http://host.docker.internal:8000 | Percentage of responses with status code 4xx | 77 % |
 | Info | Informational | http://host.docker.internal:8000 | Percentage of endpoints with content type application/json | 100 % |
-| Info | Informational | http://host.docker.internal:8000 | Percentage of endpoints with method GET | 57 % |
-| Info | Informational | http://host.docker.internal:8000 | Percentage of endpoints with method POST | 42 % |
-| Info | Informational | http://host.docker.internal:8000 | Count of total endpoints | 7    |
+| Info | Informational | http://host.docker.internal:8000 | Percentage of endpoints with method GET | 66 % |
+| Info | Informational | http://host.docker.internal:8000 | Percentage of endpoints with method POST | 33 % |
+| Info | Informational | http://host.docker.internal:8000 | Count of total endpoints | 9    |
 
 
 
@@ -36,7 +36,7 @@ ZAP by [Checkmarx](https://checkmarx.com/).
 
 | Name | Risk Level | Number of Instances |
 | --- | --- | --- |
-| A Client Error response code was returned by the server | Informational | 5 |
+| A Client Error response code was returned by the server | Informational | 7 |
 | Authentication Request Identified | Informational | 1 |
 | Non-Storable Content | Informational | Systemic |
 
@@ -59,6 +59,20 @@ A response code of 422 was returned by the server.
 This may indicate that the application is failing to handle unexpected input correctly.
 Raised by the 'Alert on HTTP Response Code Error' script
 
+* URL: http://host.docker.internal:8000/predictions
+  * Node Name: `http://host.docker.internal:8000/predictions`
+  * Method: `GET`
+  * Parameter: ``
+  * Attack: ``
+  * Evidence: `401`
+  * Other Info: ``
+* URL: http://host.docker.internal:8000/predictions/10
+  * Node Name: `http://host.docker.internal:8000/predictions/10`
+  * Method: `GET`
+  * Parameter: ``
+  * Attack: ``
+  * Evidence: `401`
+  * Other Info: ``
 * URL: http://host.docker.internal:8000/tickets
   * Node Name: `http://host.docker.internal:8000/tickets`
   * Method: `GET`
@@ -96,7 +110,7 @@ Raised by the 'Alert on HTTP Response Code Error' script
   * Other Info: ``
 
 
-Instances: 5
+Instances: 7
 
 ### Solution
 
@@ -159,15 +173,15 @@ This is an informational alert rather than a vulnerability and so there is nothi
 
 The response contents are not storable by caching components such as proxy servers. If the response does not contain sensitive, personal or user-specific information, it may benefit from being stored and cached, to improve performance.
 
-* URL: http://host.docker.internal:8000/health
-  * Node Name: `http://host.docker.internal:8000/health`
+* URL: http://host.docker.internal:8000/predictions
+  * Node Name: `http://host.docker.internal:8000/predictions`
   * Method: `GET`
   * Parameter: ``
   * Attack: ``
   * Evidence: `no-store`
   * Other Info: ``
-* URL: http://host.docker.internal:8000/tickets/10
-  * Node Name: `http://host.docker.internal:8000/tickets/10`
+* URL: http://host.docker.internal:8000/predictions/10
+  * Node Name: `http://host.docker.internal:8000/predictions/10`
   * Method: `GET`
   * Parameter: ``
   * Attack: ``

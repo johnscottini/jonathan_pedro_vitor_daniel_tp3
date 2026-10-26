@@ -18,8 +18,8 @@ execução. Os relatórios exportados pelo ZAP estão nesta pasta:
 | Modo | **Passivo**: o ZAP só observa as requisições e respostas, sem enviar ataques |
 | Alvo 1 — API | `zap-api-scan.py -S` (modo seguro) a partir de `http://host.docker.internal:8000/openapi.json` |
 | Alvo 2 — documentação | `zap-baseline.py` (spider + scan passivo) a partir de `http://host.docker.internal:8000/docs` |
-| Escopo | `/health`, `/auth/token`, `/predict`, `/tickets`, `/tickets/{id}`, `/docs`, `/openapi.json` |
-| Execuções | 25/10/2026: 1º scan do `/docs` às 22:49, correções, 2º scan às 22:53 e scan final da API às 22:54 (horário de Brasília) |
+| Escopo | `/health`, `/auth/token`, `/predict`, `/predictions`, `/predictions/{id}`, `/tickets`, `/tickets/{id}`, `/docs`, `/openapi.json` |
+| Execuções | 25/10/2026: 1º scan do `/docs` às 22:49, correções, 2º scan às 22:53 e scan da API às 22:54. **26/10/2026: nova auditoria completa (API às 18:36 e `/docs` às 18:36)**, depois das alterações descritas abaixo. Horários de Brasília |
 
 Por que dois alvos: o `zap-api-scan` só visita as rotas descritas no
 `openapi.json`, e a página `/docs` não faz parte da especificação. No TP2 apenas
@@ -37,6 +37,20 @@ docker run --rm -v "$(pwd)/zap:/zap/wrk:rw" zaproxy/zap-stable zap-baseline.py \
   -t http://host.docker.internal:8000/docs \
   -r zap_baseline_docs_tp3.html -J zap_baseline_docs_tp3.json -I
 ```
+
+## Nova auditoria após as alterações de 26/10
+
+Toda alteração na API exige repetir a auditoria. Em 26/10 a API ganhou:
+- a tabela `prediction`, com `owner_id`;
+- as rotas `GET /predictions` e `GET /predictions/{id}`, com verificação de ownership;
+- o registro de cada chamada ao `POST /predict`;
+- o rate limit do login passando para 10 requisições por minuto.
+
+Os dois scans foram refeitos, e os relatórios desta pasta são os dessa execução
+final. O scan da API visitou 10 URLs, incluindo as rotas novas de predições, e
+terminou com `FAIL-NEW: 0 / WARN-NEW: 0` e 119 regras aprovadas. O scan do
+`/docs` continuou só com os 2 alertas informativos. **Nenhum finding Medium,
+High ou Low** apareceu com as alterações.
 
 ## Resumo por severidade
 

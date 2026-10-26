@@ -1,8 +1,8 @@
 {
 	"@programName": "ZAP",
 	"@version": "2.17.0",
-	"@generated": "Mon, 26 Oct 2026 01:54:02",
-	"created": "2026-10-26T01:54:02.175709013Z",
+	"@generated": "Mon, 26 Oct 2026 21:36:01",
+	"created": "2026-10-26T21:36:01.031346297Z",
 	"insights":[
 		{
 			"level": "Info",
@@ -10,7 +10,7 @@
 			"site": "http://host.docker.internal:8000",
 			"key": "insight.code.2xx",
 			"description": "Percentage of responses with status code 2xx",
-			"statistic": "28"
+			"statistic": "22"
 		},
 		{
 			"level": "Info",
@@ -18,7 +18,7 @@
 			"site": "http://host.docker.internal:8000",
 			"key": "insight.code.4xx",
 			"description": "Percentage of responses with status code 4xx",
-			"statistic": "71"
+			"statistic": "77"
 		},
 		{
 			"level": "Info",
@@ -34,7 +34,7 @@
 			"site": "http://host.docker.internal:8000",
 			"key": "insight.endpoint.method.GET",
 			"description": "Percentage of endpoints with method GET",
-			"statistic": "57"
+			"statistic": "66"
 		},
 		{
 			"level": "Info",
@@ -42,7 +42,7 @@
 			"site": "http://host.docker.internal:8000",
 			"key": "insight.endpoint.method.POST",
 			"description": "Percentage of endpoints with method POST",
-			"statistic": "42"
+			"statistic": "33"
 		},
 		{
 			"level": "Info",
@@ -50,7 +50,7 @@
 			"site": "http://host.docker.internal:8000",
 			"key": "insight.endpoint.total",
 			"description": "Count of total endpoints",
-			"statistic": "7"
+			"statistic": "9"
 		}
 	],
 	"site":[ 
@@ -72,6 +72,26 @@
 					"instances":[ 
 						{
 							"id": "2",
+							"uri": "http://host.docker.internal:8000/predictions",
+							"nodeName": "http:\/\/host.docker.internal:8000\/predictions",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "3",
+							"uri": "http://host.docker.internal:8000/predictions/10",
+							"nodeName": "http:\/\/host.docker.internal:8000\/predictions\/10",
+							"method": "GET",
+							"param": "",
+							"attack": "",
+							"evidence": "401",
+							"otherinfo": ""
+						},
+						{
+							"id": "4",
 							"uri": "http://host.docker.internal:8000/tickets",
 							"nodeName": "http:\/\/host.docker.internal:8000\/tickets",
 							"method": "GET",
@@ -81,7 +101,7 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "4",
+							"id": "6",
 							"uri": "http://host.docker.internal:8000/tickets/10",
 							"nodeName": "http:\/\/host.docker.internal:8000\/tickets\/10",
 							"method": "GET",
@@ -111,7 +131,7 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "3",
+							"id": "5",
 							"uri": "http://host.docker.internal:8000/tickets",
 							"nodeName": "http:\/\/host.docker.internal:8000\/tickets ()({subject,description,ticket_type,priority,channel})",
 							"method": "POST",
@@ -121,7 +141,7 @@
 							"otherinfo": ""
 						}
 					],
-					"count": "5",
+					"count": "7",
 					"systemic": false,
 					"solution": "",
 					"otherinfo": "",
@@ -141,7 +161,7 @@
 					"desc": "<p>The given request has been identified as an authentication request. The 'Other Info' field contains a set of key=value lines which identify any relevant fields. If the request is in a context which has an Authentication Method set to \"Auto-Detect\" then this rule will change the authentication to match the request identified.</p>",
 					"instances":[ 
 						{
-							"id": "5",
+							"id": "7",
 							"uri": "http://host.docker.internal:8000/auth/token",
 							"nodeName": "http:\/\/host.docker.internal:8000\/auth\/token ()(client_id,client_secret,grant_type,password,scope,username)",
 							"method": "POST",
@@ -171,9 +191,9 @@
 					"desc": "<p>The response contents are not storable by caching components such as proxy servers. If the response does not contain sensitive, personal or user-specific information, it may benefit from being stored and cached, to improve performance.</p>",
 					"instances":[ 
 						{
-							"id": "6",
-							"uri": "http://host.docker.internal:8000/health",
-							"nodeName": "http:\/\/host.docker.internal:8000\/health",
+							"id": "8",
+							"uri": "http://host.docker.internal:8000/predictions",
+							"nodeName": "http:\/\/host.docker.internal:8000\/predictions",
 							"method": "GET",
 							"param": "",
 							"attack": "",
@@ -181,9 +201,9 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "10",
-							"uri": "http://host.docker.internal:8000/tickets/10",
-							"nodeName": "http:\/\/host.docker.internal:8000\/tickets\/10",
+							"id": "13",
+							"uri": "http://host.docker.internal:8000/predictions/10",
+							"nodeName": "http:\/\/host.docker.internal:8000\/predictions\/10",
 							"method": "GET",
 							"param": "",
 							"attack": "",
@@ -191,7 +211,7 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "11",
+							"id": "14",
 							"uri": "http://host.docker.internal:8000/auth/token",
 							"nodeName": "http:\/\/host.docker.internal:8000\/auth\/token ()(client_id,client_secret,grant_type,password,scope,username)",
 							"method": "POST",
@@ -201,7 +221,7 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "8",
+							"id": "10",
 							"uri": "http://host.docker.internal:8000/predict",
 							"nodeName": "http:\/\/host.docker.internal:8000\/predict ()({text})",
 							"method": "POST",
@@ -211,7 +231,7 @@
 							"otherinfo": ""
 						},
 						{
-							"id": "9",
+							"id": "11",
 							"uri": "http://host.docker.internal:8000/tickets",
 							"nodeName": "http:\/\/host.docker.internal:8000\/tickets ()({subject,description,ticket_type,priority,channel})",
 							"method": "POST",
@@ -228,7 +248,7 @@
 					"reference": "<p>https://datatracker.ietf.org/doc/html/rfc7234</p><p>https://datatracker.ietf.org/doc/html/rfc7231</p><p>https://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html</p>",
 					"cweid": "524",
 					"wascid": "13",
-					"sourceid": "3"
+					"sourceid": "7"
 				}
 			]
 		}
