@@ -255,7 +255,7 @@ O resumo dos resultados está em [`docs/relatorio_eda.md`](docs/relatorio_eda.md
 pytest tests/ -v
 ```
 
-46 testes, executados contra um SQLite em memória (o `database.db` nunca é tocado):
+47 testes, executados contra um SQLite em memória (o `database.db` nunca é tocado):
 
 | Arquivo | O que cobre |
 |---|---|
@@ -347,9 +347,10 @@ O que mudou em relação ao repositório do TP2:
   - `style-src` sem `'unsafe-inline'`;
   - Swagger UI com versão fixa e SRI;
   - COEP e favicon embutido.
+- **Limite no `/predict`:** o campo `text` passou a aceitar no máximo 4000 caracteres, o mesmo teto da descrição de um ticket. Acima disso a resposta é 422.
 - **Remoção do `/redoc`:** exigiria `'unsafe-inline'`, e o `/docs` atende ao requisito de documentação.
 - **Testes:**
-  - 20 testes novos (`test_seguranca_tp3.py`, `test_docs_openapi.py` e as evidências do ZAP em `test_headers.py`);
+  - 21 testes novos (`test_seguranca_tp3.py`, `test_docs_openapi.py` e as evidências do ZAP em `test_headers.py`);
   - a fixture `limiter_ligado` foi para o `conftest.py`.
   - Nenhum controle de segurança precisou de correção para os testes passarem.
 - **CI:** workflow do GitHub Actions.

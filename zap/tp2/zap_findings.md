@@ -44,14 +44,14 @@ uma API FastAPI recém-exposta vêm das regras de header ausente, CSP não
 definida, falta de proteção contra clickjacking, `X-Content-Type-Options`
 ausente, HSTS ausente e banner do servidor expondo a versão. Nenhuma delas
 disparou aqui porque todos esses headers são enviados pelo middleware em
-[`fastapi/middleware/security_headers.py`](../fastapi/middleware/security_headers.py),
+[`fastapi/middleware/security_headers.py`](../../fastapi/middleware/security_headers.py),
 o que pode ser conferido de duas formas independentes do relatório:
 
 ```bash
 curl -si http://127.0.0.1:8000/health | grep -iE "strict-transport|x-frame|x-content-type|content-security|^server"
 ```
 
-e pelos testes automatizados em [`tests/test_headers.py`](../tests/test_headers.py),
+e pelos testes automatizados em [`tests/test_headers.py`](../../tests/test_headers.py),
 que falham se qualquer um dos headers obrigatórios deixar de ser enviado —
 inclusive nas respostas de erro.
 
@@ -76,7 +76,7 @@ Como não há findings dessas severidades, foram documentados os findings Low e 
   `fastapi/middleware/security_headers.py`.
 - **Evidência pós-correção:** a segunda execução do ZAP não reporta mais o
   alerta (de 117 para 118 regras aprovadas, 0 WARN), e o header é verificado
-  automaticamente em [`tests/test_headers.py`](../tests/test_headers.py).
+  automaticamente em [`tests/test_headers.py`](../../tests/test_headers.py).
 
 ## F02 — A Client Error response code was returned by the server
 
@@ -92,7 +92,7 @@ Como não há findings dessas severidades, foram documentados os findings Low e 
   rota protegida devolve 401 (`Not authenticated`), e a chamada a
   `/tickets/10` devolve 404 porque o recurso não pertence a quem pediu. Transformar esses casos em 2xx seria a vulnerabilidade. Os
   mesmos códigos estão cobertos por testes em
-  [`tests/test_seguranca.py`](../tests/test_seguranca.py).
+  [`tests/test_seguranca.py`](../../tests/test_seguranca.py).
 
 ## F03 — Non-Storable Content
 

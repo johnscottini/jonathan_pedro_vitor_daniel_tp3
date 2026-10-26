@@ -49,8 +49,9 @@ app = FastAPI(
         {"name": "tickets", "description": "Tickets do usuário autenticado, com verificação de dono — requer token."},
     ],
     lifespan=lifespan,
-    # /docs e /redoc são servidos por `routes/docs.py`, que monta a CSP com o
-    # hash do script inline do Swagger em vez de liberar 'unsafe-inline'.
+    # /docs é servido por `routes/docs.py`, que monta a CSP com o hash do script
+    # inline do Swagger em vez de liberar 'unsafe-inline'. O /redoc foi
+    # desativado no TP3 (ver zap/scan_passivo_zap_TP3.md).
     docs_url=None,
     redoc_url=None,
 )

@@ -234,7 +234,7 @@ mas vale medir, em vez de assumir.
 ### Integração com a API
 
 O `POST /predict` hoje devolve uma intenção simulada por correspondência de
-palavras-chave. No TP3 ele passa a carregar o modelo treinado e devolver a classe
+palavras-chave. No próximo TP (TP4) ele passa a carregar o modelo treinado e devolver a classe
 prevista com a probabilidade associada, mantendo o mesmo contrato de entrada e
 saída (`PredictRequest` / `PredictResponse`) — a troca fica invisível para quem
 consome a API.

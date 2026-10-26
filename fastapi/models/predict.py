@@ -7,7 +7,10 @@ class PredictRequest(StrictModel):
     text: str = Field(
         ...,
         min_length=1,
-        description="Texto do ticket enviado pelo cliente",
+        # Mesmo teto da descrição de um ticket: sem limite, um corpo de vários MB
+        # chegaria inteiro ao classificador (superfície de negação de serviço).
+        max_length=4000,
+        description="Texto do ticket enviado pelo cliente (até 4000 caracteres)",
         examples=["I was charged twice for my order and want a refund."],
     )
 

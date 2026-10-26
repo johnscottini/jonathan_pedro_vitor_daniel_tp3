@@ -211,3 +211,11 @@ def test_rota_protegida_aceita_token_valido(client, alice):
 
     assert resposta.status_code == 200
     assert resposta.json() == []
+
+
+def test_predict_rejeita_texto_acima_do_tamanho_maximo(client, token_alice):
+    """Sem teto, um corpo enorme chegaria inteiro ao classificador (DoS)."""
+    resposta = client.post("/predict", headers=auth_header(token_alice), json={"text": "a" * 4001})
+
+    corpo = _assert_erro_padronizado(resposta, 422, "validation_error", "/predict")
+    assert any(campo["field"].endswith("text") for campo in corpo["fields"])

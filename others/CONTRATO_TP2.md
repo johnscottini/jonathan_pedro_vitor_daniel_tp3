@@ -1,5 +1,18 @@
 # Contrato do TP2 — decisões da fase 0
 
+> **Documento histórico do TP2.** Os caminhos citados abaixo são os da época e
+> foram reorganizados no TP3 para a estrutura de entrega:
+>
+> | TP2 | TP3 |
+> |---|---|
+> | `eda/eda.ipynb` | `eda/eda_tp3.ipynb` |
+> | `eda/requirements.txt` | `requirements-eda.txt` |
+> | `fastapi/db.py` | `fastapi/sqlite_database.py` (+ `fastapi/sqlite_populate.py`) |
+> | `fastapi/app.db` | `fastapi/database.db` (versionado) |
+> | `docs/zap_findings.md`, `docs/zap_report*.html` | `zap/tp2/` |
+> | `docs/CONTRATO_TP2.md` | `others/CONTRATO_TP2.md` |
+> | `/redoc` | removido no TP3 (ver `zap/scan_passivo_zap_TP3.md`) |
+
 Documento de referência do time. Tudo o que está aqui **já foi decidido e já está
 no código** (`main`): ninguém precisa reinventar nada, e mudar qualquer item
 abaixo exige avisar as outras duas pessoas, porque quebra o trabalho delas.

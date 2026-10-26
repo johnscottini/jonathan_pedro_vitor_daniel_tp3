@@ -35,7 +35,7 @@ _STUB_CONFIDENCE = 0.5
         "com uma confiança. **Nesta versão a saída é simulada** por palavras-chave; o "
         "classificador treinado substitui a lógica no próximo TP, mantendo o mesmo "
         "contrato.\n\n"
-        "**Corpo:** `{\"text\": \"...\"}`, com texto não vazio. Qualquer outro campo devolve 422.\n\n"
+        "**Corpo:** `{\"text\": \"...\"}`, com texto não vazio e de até 4000 caracteres. Qualquer outro campo devolve 422.\n\n"
         + "**Autenticação:** exige `Authorization: Bearer <token>`, obtido em `POST /auth/token` (no Swagger, use o botão **Authorize**)."
     ),
     responses={
