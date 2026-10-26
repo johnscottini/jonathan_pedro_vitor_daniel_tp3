@@ -5,7 +5,7 @@ fixa três decisões: o algoritmo que vai prever a intenção das mensagens, a f
 de transformar o texto em atributos numéricos e o alvo autorizado para o pentest
 do TP4/TP5.
 
-**Problema (formalizado na seção 9 do [`eda/eda_tp3.ipynb`](../eda/eda_tp3.ipynb)):**
+**Problema (formalizado na seção 11 do [`eda/eda_tp3.ipynb`](../eda/eda_tp3.ipynb)):**
 dado o texto de uma mensagem de atendimento ao cliente, qual é a intenção do
 usuário?
 

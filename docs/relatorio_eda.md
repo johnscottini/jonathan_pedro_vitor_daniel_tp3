@@ -126,7 +126,38 @@ classificador hierárquico fica descartado como atalho.
 | **H1** — distribuição de intenções artificialmente uniforme | Qui-quadrado de aderência | 0,1149 | **Sustentada** |
 | **H2** — intenções se agrupam em eixo técnico e comercial | Mann-Whitney | 0,7467 | **Não sustentada** |
 | **H3** — `Ticket Type` e `Ticket Subject` são rótulos independentes | Qui-quadrado de independência | 0,9807 | **Sustentada** |
-| **H4** — metadados e tamanho do texto não informam a intenção | Qui-quadrado (canal, prioridade, gênero) e Kruskal-Wallis (tamanho do texto) | 0,46 / 0,56 / 0,66 / 0,47 | **Sustentada** |
+| **H4** — metadados e tamanho do texto não informam a intenção | **Mann-Whitney** (palavras, eixo técnico × comercial), qui-quadrado (canal, prioridade, gênero) e Kruskal-Wallis (tamanho do texto) | 0,58 / 0,46 / 0,56 / 0,66 / 0,47 | **Sustentada** |
+
+O teste formal de dois grupos da H4 (seção 7.6 do notebook) compara o número de
+palavras das descrições entre os eixos técnico e comercial: Mann-Whitney
+p ≈ 0,58, t de Welch p ≈ 0,85, mediana de 50 palavras nos dois grupos e
+rank-biserial ≈ 0,007. O tamanho do texto não separa as intenções.
+
+### 3.5 Variáveis textuais (seção 7.7 do notebook)
+
+- **Medidas do texto** (palavras, caracteres, termos distintos): medianas
+  praticamente iguais nos cinco tipos, ≈ 50 palavras, ≈ 298 caracteres e
+  39 termos distintos.
+- **CountVectorizer** (stop words em inglês, `min_df=5`): 1.477 termos, matriz
+  98,7% esparsa. Os termos mais frequentes ("product", "issue", "assist") vêm
+  das frases de template.
+- **Termos preditores:** 88 termos têm p < 0,05 no qui-quadrado contra
+  `Ticket Type`, perto dos ~74 esperados por acaso, e só 1 resiste à correção de
+  Bonferroni ("import"). O sinal do texto existe, mas é fraco e disperso.
+- **Termos redundantes:** 53 pares entre os 150 termos mais frequentes têm
+  correlação acima de 0,9 ("acts" ~ "unexpectedly", "hoping" ~ "performed"),
+  porque são pedaços das mesmas frases de template.
+
+### 3.6 Outliers e anomalias (seção 8 do notebook)
+
+- **Normalidade:** nenhuma variável numérica é normal (Shapiro-Wilk, p < 1e-11),
+  então os outliers foram identificados pelo IQR.
+- **Idade e satisfação:** sem outliers.
+- **Tamanho do texto:** 342 descrições (4%) estão abaixo de 29 palavras, todas no
+  lado de baixo. São mensagens legítimas e foram mantidas.
+- **Anomalias:** nenhuma categoria rara (< 1%); 392 descrições duplicadas; 512
+  com restos de HTML ou URL; 100% com o placeholder `{product_purchased}`. São
+  artefatos da geração sintética, registrados como limitação.
 
 ---
 
@@ -241,7 +272,7 @@ consome a API.
 
 ---
 
-## 7. TP3 — Regressão linear (seção 8 do notebook)
+## 7. TP3 — Regressão linear (seção 10 do notebook)
 
 | Item | Definição |
 |---|---|
@@ -276,7 +307,7 @@ entradas de propósito.
 quantidade. A intenção é uma categoria nominal, e saber o tamanho da mensagem
 não diz qual é o pedido do cliente.
 
-## 8. TP3 — Formalização do problema de classificação (seção 9 do notebook)
+## 8. TP3 — Formalização do problema de classificação (seção 11 do notebook)
 
 > **Dado o texto de uma mensagem de atendimento ao cliente, qual é a intenção do usuário?**
 
