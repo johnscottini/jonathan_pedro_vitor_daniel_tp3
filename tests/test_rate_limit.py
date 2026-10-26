@@ -2,33 +2,14 @@
 
 Este arquivo existe porque `conftest.py` DESLIGA o rate limit nos demais testes
 (senão os logins em série derrubariam a suíte com 429). Aqui ele é religado,
-teste a teste, para comprovar o 429.
+teste a teste (fixture `limiter_ligado`, em `conftest.py`), para comprovar o 429.
 
 O limite vem de `core.config.RATE_LIMIT_LOGIN`: o teste lê o número de lá em vez
 de repetir "5", para não quebrar se o limite for ajustado.
 """
 
-import pytest
-
-from core.config import RATE_LIMIT_LOGIN
-from core.limiter import reset_rate_limiting, set_rate_limiting_enabled
+from tests.conftest import LIMITE_LOGIN as LIMITE
 from tests.conftest import SENHA_PADRAO
-
-LIMITE = int(RATE_LIMIT_LOGIN.split("/")[0])
-
-
-@pytest.fixture
-def limiter_ligado():
-    """Religa o rate limit só para este teste e zera o contador nas duas pontas.
-
-    O contador do slowapi vive na memória do processo: sem o reset, a ordem dos
-    testes mudaria o resultado.
-    """
-    reset_rate_limiting()
-    set_rate_limiting_enabled(True)
-    yield
-    set_rate_limiting_enabled(False)
-    reset_rate_limiting()
 
 
 def test_login_devolve_429_apos_exceder_o_limite(client, limiter_ligado, alice):

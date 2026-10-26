@@ -1,7 +1,7 @@
 """Infraestrutura de testes — montada na fase 0, usada pelas Pessoas 2 e 3.
 
 Os nomes das fixtures fazem parte do contrato: `session`, `client`, `alice`,
-`bob`, `token_alice`, `token_bob`, `ticket_de_bob`. Se precisar de outra
+`bob`, `token_alice`, `token_bob`, `ticket_de_bob`, `limiter_ligado`. Se precisar de outra
 fixture, adicione aqui em vez de recriar a mesma coisa em cada arquivo.
 
 Cada teste roda contra um SQLite **em memória**, isolado: o banco real
@@ -13,13 +13,17 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from core.limiter import set_rate_limiting_enabled
+from core.config import RATE_LIMIT_LOGIN
+from core.limiter import reset_rate_limiting, set_rate_limiting_enabled
 from sqlite_database import get_session
 from main import app
 from models.tables import Ticket, User
 from security.users import ADMIN_USERNAME, hash_password
 
 SENHA_PADRAO = "senha-de-teste-123"
+
+# Lido da configuração em vez de repetir "5": o teste não quebra se o limite mudar.
+LIMITE_LOGIN = int(RATE_LIMIT_LOGIN.split("/")[0])
 
 
 @pytest.fixture(name="session")
@@ -108,3 +112,18 @@ def ticket_de_bob(session, bob) -> Ticket:
     session.commit()
     session.refresh(ticket)
     return ticket
+
+
+@pytest.fixture
+def limiter_ligado():
+    """Religa o rate limit só para o teste e zera o contador nas duas pontas.
+
+    O `client` desliga o limite para a suíte inteira (senão os logins em série
+    derrubariam os testes com 429). O contador do slowapi vive na memória do
+    processo: sem o reset, a ordem dos testes mudaria o resultado.
+    """
+    reset_rate_limiting()
+    set_rate_limiting_enabled(True)
+    yield
+    set_rate_limiting_enabled(False)
+    reset_rate_limiting()

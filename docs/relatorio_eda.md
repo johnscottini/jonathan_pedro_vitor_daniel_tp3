@@ -265,7 +265,7 @@ de 22 a 65: o modelo devolve praticamente a média para todo mundo. O Q-Q Plot
 tem forma de "S", com cauda esquerda longa (um grupo de descrições curtas que
 nenhum atributo antecipa) e cauda direita curta (o texto tem teto de ~65
 palavras). O Shapiro-Wilk rejeita a normalidade (p ≈ 8e-16), e os resíduos
-formam faixas por o alvo ser uma contagem inteira.
+formam faixas porque o alvo é uma contagem inteira.
 
 **Limitações.** (1) não há sinal a capturar, o que confirma H1 a H4 e I2; (2) o
 alvo é discreto e assimétrico, o que viola a hipótese de resíduos normais; (3) a
