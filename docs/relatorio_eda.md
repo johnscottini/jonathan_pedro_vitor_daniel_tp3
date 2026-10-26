@@ -128,36 +128,24 @@ classificador hierárquico fica descartado como atalho.
 | **H3** — `Ticket Type` e `Ticket Subject` são rótulos independentes | Qui-quadrado de independência | 0,9807 | **Sustentada** |
 | **H4** — metadados e tamanho do texto não informam a intenção | **Mann-Whitney** (palavras, eixo técnico × comercial), qui-quadrado (canal, prioridade, gênero) e Kruskal-Wallis (tamanho do texto) | 0,58 / 0,46 / 0,56 / 0,66 / 0,47 | **Sustentada** |
 
-O teste formal de dois grupos da H4 (seção 7.6 do notebook) compara o número de
-palavras das descrições entre os eixos técnico e comercial: Mann-Whitney
-p ≈ 0,58, t de Welch p ≈ 0,85, mediana de 50 palavras nos dois grupos e
-rank-biserial ≈ 0,007. O tamanho do texto não separa as intenções.
+O segundo teste formal (H4, seção 7.6) compara o número de palavras entre os
+eixos técnico e comercial: Mann-Whitney p ≈ 0,58, sem diferença.
 
-### 3.5 Variáveis textuais (seção 7.7 do notebook)
+### 3.5 Variáveis textuais (seção 7.7)
 
-- **Medidas do texto** (palavras, caracteres, termos distintos): medianas
-  praticamente iguais nos cinco tipos, ≈ 50 palavras, ≈ 298 caracteres e
-  39 termos distintos.
-- **CountVectorizer** (stop words em inglês, `min_df=5`): 1.477 termos, matriz
-  98,7% esparsa. Os termos mais frequentes ("product", "issue", "assist") vêm
-  das frases de template.
-- **Termos preditores:** 88 termos têm p < 0,05 no qui-quadrado contra
-  `Ticket Type`, perto dos ~74 esperados por acaso, e só 1 resiste à correção de
-  Bonferroni ("import"). O sinal do texto existe, mas é fraco e disperso.
-- **Termos redundantes:** 53 pares entre os 150 termos mais frequentes têm
-  correlação acima de 0,9 ("acts" ~ "unexpectedly", "hoping" ~ "performed"),
-  porque são pedaços das mesmas frases de template.
+- O tamanho do texto é igual nos cinco tipos (mediana de 50 palavras).
+- O `CountVectorizer` gerou 1.477 termos. Só 1 termo tem associação com o
+  `Ticket Type` após a correção de Bonferroni, ou seja, o sinal do texto é
+  fraco.
+- 53 pares de termos são redundantes (correlação > 0,9), vindos das frases de
+  template.
 
-### 3.6 Outliers e anomalias (seção 8 do notebook)
+### 3.6 Outliers e anomalias (seção 8)
 
-- **Normalidade:** nenhuma variável numérica é normal (Shapiro-Wilk, p < 1e-11),
-  então os outliers foram identificados pelo IQR.
-- **Idade e satisfação:** sem outliers.
-- **Tamanho do texto:** 342 descrições (4%) estão abaixo de 29 palavras, todas no
-  lado de baixo. São mensagens legítimas e foram mantidas.
-- **Anomalias:** nenhuma categoria rara (< 1%); 392 descrições duplicadas; 512
-  com restos de HTML ou URL; 100% com o placeholder `{product_purchased}`. São
-  artefatos da geração sintética, registrados como limitação.
+Nenhuma variável numérica é normal, então foi usado o IQR. Idade e satisfação
+não têm outliers. Há 342 descrições curtas (menos de 29 palavras), válidas e
+mantidas. Como anomalias, 392 descrições estão duplicadas e 512 têm restos de
+HTML/URL, registrados como limitação do dataset sintético.
 
 ---
 
@@ -274,62 +262,41 @@ consome a API.
 
 ## 7. TP3 — Regressão linear (seção 10 do notebook)
 
-| Item | Definição |
-|---|---|
-| Alvo (y) | `n_palavras_descricao`: palavras de `Ticket Description` limpa (média 48,1, desvio 8,5, de 22 a 65) |
-| Entradas (X) | one-hot de `Ticket Type`, `Ticket Subject`, `Ticket Priority`, `Ticket Channel`, `Product Purchased`, `Customer Gender` + `Customer Age` (75 atributos). O texto ficou de fora para não tornar o problema circular |
-| Modelo | `LinearRegression` em `Pipeline` com `OneHotEncoder`, treino/teste 80/20 (`random_state=42`) |
+- Alvo: número de palavras da descrição (`n_palavras_descricao`).
+- Entradas: `Ticket Type`, `Ticket Subject`, `Ticket Priority`,
+  `Ticket Channel`, `Product Purchased`, `Customer Gender` (one-hot) e
+  `Customer Age`.
+- Modelo: `LinearRegression`, treino/teste 80/20, comparado com a média.
 
 | Conjunto | R² | RMSE (palavras) |
 |---|---|---|
-| Regressão linear — treino | 0,011 | 8,41 |
-| Regressão linear — teste | **−0,006** | **8,81** |
-| Baseline (sempre a média) — teste | −0,001 | 8,79 |
+| Regressão — treino | 0,011 | 8,41 |
+| Regressão — teste | −0,006 | 8,81 |
+| Média — teste | −0,001 | 8,79 |
 
-**Leitura.** R² ≈ 0 (levemente negativo) no teste significa que o modelo não
-explica nada da variação do tamanho da mensagem: ele empata com prever a média.
-O RMSE de ~8,8 palavras é igual ao do baseline e ao desvio padrão do alvo. O R²
-um pouco maior no treino indica que o pouco aprendido era ruído.
-
-**Resíduos.** As previsões ficam entre 45,5 e 51,5 palavras, enquanto o real vai
-de 22 a 65: o modelo devolve praticamente a média para todo mundo. O Q-Q Plot
-tem forma de "S", com cauda esquerda longa (um grupo de descrições curtas que
-nenhum atributo antecipa) e cauda direita curta (o texto tem teto de ~65
-palavras). O Shapiro-Wilk rejeita a normalidade (p ≈ 8e-16), e os resíduos
-formam faixas porque o alvo é uma contagem inteira.
-
-**Limitações.** (1) não há sinal a capturar, o que confirma H1 a H4 e I2; (2) o
-alvo é discreto e assimétrico, o que viola a hipótese de resíduos normais; (3) a
-regressão linear só modela efeitos aditivos; (4) o texto foi excluído das
-entradas de propósito.
-
-**Por que não representa o problema principal.** A regressão prevê uma
-quantidade. A intenção é uma categoria nominal, e saber o tamanho da mensagem
-não diz qual é o pedido do cliente.
+O modelo não supera a média: os metadados não explicam o tamanho da mensagem.
+As previsões ficam presas entre 45 e 52 palavras, e os resíduos não são normais
+(Q-Q Plot e Shapiro-Wilk). As limitações são a ausência de relação nos dados, um
+alvo discreto e assimétrico, e o fato de o modelo ser só aditivo. A regressão
+também não representa o problema principal: ela prevê uma quantidade, e a
+intenção é uma categoria.
 
 ## 8. TP3 — Formalização do problema de classificação (seção 11 do notebook)
 
-> **Dado o texto de uma mensagem de atendimento ao cliente, qual é a intenção do usuário?**
+Pergunta: dado o texto de uma mensagem de atendimento ao cliente, qual é a
+intenção do usuário? X = `Ticket Description` limpa; y = `Ticket Type`
+(classificação multiclasse).
 
-- **X:** `Ticket Description` (texto limpo, sem o placeholder `{product_purchased}`).
-- **y:** `Ticket Type`, com classificação supervisionada multiclasse e 5 classes.
-
-| Classe de intenção | Exemplos | % |
+| Classe | Exemplos | % |
 |---|---|---|
 | Refund request | 1.752 | 20,69 |
 | Technical issue | 1.747 | 20,63 |
 | Cancellation request | 1.695 | 20,01 |
 | Product inquiry | 1.641 | 19,38 |
 | Billing inquiry | 1.634 | 19,29 |
-| **Total** | **8.469** | **100,00** |
+| Total | 8.469 | 100,00 |
 
-Nenhuma classe é significativamente mais frequente: a razão entre a maior e a
-menor é 1,07, e o qui-quadrado da H1 (p ≈ 0,11) é compatível com uma
-distribuição uniforme. Por isso não há necessidade de balanceamento, e o
-baseline da classe majoritária acerta 20,7%.
-
-**Por que classificação.** O alvo é categórico nominal. Codificá-lo como 0 a 4
-para uma regressão linear inventaria ordem e distância entre intenções, e a saída
-contínua (ex.: 2,4) não corresponde a nenhuma classe. Um classificador aprende
-fronteiras entre as classes, devolve uma probabilidade por classe (o formato de
-`/predict`) e é avaliado com acurácia, F1 e matriz de confusão, não com R²/RMSE.
+Nenhuma classe domina (razão 1,07 entre a maior e a menor). É um problema de
+classificação porque o alvo é uma categoria sem ordem: numerar as classes para
+uma regressão criaria distâncias falsas, e a saída contínua não corresponderia a
+nenhuma classe.
