@@ -13,11 +13,16 @@ from models.base import StrictModel
 
 
 class TicketCreate(StrictModel):
-    subject: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(..., min_length=1, max_length=4000)
-    ticket_type: str = Field(..., min_length=1, max_length=50)
-    priority: str = Field(default="Low", max_length=20)
-    channel: str = Field(default="Email", max_length=20)
+    subject: str = Field(..., min_length=1, max_length=200, description="Assunto do ticket",
+                         examples=["Payment issue"])
+    description: str = Field(..., min_length=1, max_length=4000, description="Texto escrito pelo cliente",
+                             examples=["I was charged twice for the same order."])
+    ticket_type: str = Field(..., min_length=1, max_length=50, description="Tipo (intenção) declarado",
+                             examples=["Billing inquiry"])
+    priority: str = Field(default="Low", max_length=20, description="Low, Medium, High ou Critical",
+                          examples=["High"])
+    channel: str = Field(default="Email", max_length=20, description="Canal de abertura",
+                         examples=["Email"])
 
 
 class TicketRead(BaseModel):

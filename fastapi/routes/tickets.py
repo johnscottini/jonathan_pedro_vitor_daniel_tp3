@@ -18,7 +18,7 @@ parametrizado — não existe string de SQL concatenada no projeto (OWASP A03).
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlmodel import Session, select
 
 from sqlite_database import get_session
@@ -41,6 +41,14 @@ _RESPOSTAS_PROTEGIDAS = {
     response_model=TicketRead,
     status_code=status.HTTP_201_CREATED,
     summary="Cria um ticket para o usuário autenticado",
+    description=(
+        "Abre um ticket de suporte. O dono do ticket é sempre o usuário do token: "
+        "o corpo **não aceita** `owner_id` nem qualquer outro campo fora do schema "
+        "(campo extra devolve 422).\n\n"
+        "**Corpo:** `subject`, `description` e `ticket_type` obrigatórios; "
+        "`priority` e `channel` opcionais.\n\n"
+        + "**Autenticação:** exige `Authorization: Bearer <token>`, obtido em `POST /auth/token` (no Swagger, use o botão **Authorize**)."
+    ),
     responses={k: v for k, v in _RESPOSTAS_PROTEGIDAS.items() if k != 404},
 )
 def criar_ticket(
@@ -59,6 +67,11 @@ def criar_ticket(
     "",
     response_model=List[TicketRead],
     summary="Lista os tickets do usuário autenticado",
+    description=(
+        "Devolve somente os tickets cujo dono é o usuário do token, em ordem de ID. "
+        "Tickets de outros usuários nunca aparecem.\n\n"
+        + "**Autenticação:** exige `Authorization: Bearer <token>`, obtido em `POST /auth/token` (no Swagger, use o botão **Authorize**)."
+    ),
     responses={401: _RESPOSTAS_PROTEGIDAS[401]},
 )
 def listar_tickets(
@@ -73,10 +86,16 @@ def listar_tickets(
     "/{ticket_id}",
     response_model=TicketRead,
     summary="Busca um ticket por ID (somente do próprio usuário)",
+    description=(
+        "Devolve o ticket pelo ID, desde que ele pertença ao usuário do token. "
+        "Ticket inexistente e ticket de outro usuário recebem a **mesma** resposta 404, "
+        "para não revelar quais IDs existem (proteção contra BOLA).\n\n"
+        + "**Autenticação:** exige `Authorization: Bearer <token>`, obtido em `POST /auth/token` (no Swagger, use o botão **Authorize**)."
+    ),
     responses=_RESPOSTAS_PROTEGIDAS,
 )
 def obter_ticket(
-    ticket_id: int,
+    ticket_id: int = Path(..., ge=1, description="ID do ticket", examples=[1]),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ) -> Ticket:

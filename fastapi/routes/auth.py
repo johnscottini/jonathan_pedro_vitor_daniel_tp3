@@ -16,6 +16,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     "/token",
     response_model=Token,
     summary="Autentica o usuário e emite um token JWT",
+    description=(
+        "Recebe `username` e `password` como formulário "
+        "(`application/x-www-form-urlencoded`, fluxo OAuth2 *password*) e devolve um "
+        "token JWT assinado (HS256), válido por 30 minutos. Use-o no header "
+        "`Authorization: Bearer <token>` das rotas protegidas.\n\n"
+        "Usuário inexistente e senha errada recebem a mesma resposta 401.\n\n"
+        "**Rate limit:** 5 tentativas por minuto por IP; acima disso a resposta é 429 "
+        "com o header `Retry-After`."
+    ),
     responses={
         401: {"model": ErrorResponse, "description": "Usuário ou senha incorretos"},
         422: {"model": ErrorResponse, "description": "Formulário inválido"},

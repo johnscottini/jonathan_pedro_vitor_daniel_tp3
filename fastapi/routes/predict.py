@@ -30,6 +30,14 @@ _STUB_CONFIDENCE = 0.5
     "/predict",
     response_model=PredictResponse,
     summary="Prevê a intenção de um ticket (saída simulada)",
+    description=(
+        "Recebe o texto de uma mensagem de atendimento e devolve a intenção prevista "
+        "com uma confiança. **Nesta versão a saída é simulada** por palavras-chave; o "
+        "classificador treinado substitui a lógica no próximo TP, mantendo o mesmo "
+        "contrato.\n\n"
+        "**Corpo:** `{\"text\": \"...\"}`, com texto não vazio. Qualquer outro campo devolve 422.\n\n"
+        + "**Autenticação:** exige `Authorization: Bearer <token>`, obtido em `POST /auth/token` (no Swagger, use o botão **Authorize**)."
+    ),
     responses={
         401: {"model": ErrorResponse, "description": "Token ausente, inválido, expirado ou de usuário não autorizado"},
         422: {"model": ErrorResponse, "description": "Corpo da requisição inválido"},

@@ -4,6 +4,8 @@ Comprova que os headers exigidos estão presentes nas respostas da API, inclusiv
 nas de erro, e que o CORS só aceita as origens da allowlist.
 """
 
+import re
+
 import pytest
 
 from core.config import CORS_ORIGINS
@@ -59,17 +61,29 @@ def test_swagger_carrega_com_script_inline_autorizado_por_hash(client):
     assert "unsafe-inline" not in script_src
 
 
-def test_redoc_tambem_responde(client):
-    """O ReDoc não usa script inline — só o bundle externo —, então a CSP dele
-    não precisa de hash, mas precisa autorizar o CDN e manter o restante fechado.
-    """
-    resposta = client.get("/redoc")
-    assert resposta.status_code == 200
-
+def test_docs_corrige_os_findings_medium_do_zap_tp3(client):
+    """Evidência das correções do scan passivo do TP3 (zap/scan_passivo_zap_TP3.md)."""
+    resposta = client.get("/docs")
     csp = resposta.headers["Content-Security-Policy"]
-    assert "https://cdn.jsdelivr.net" in csp
-    assert "default-src 'none'" in csp
-    assert "frame-ancestors 'none'" in csp
+    diretivas = {d.strip().split(" ")[0]: d.strip() for d in csp.split(";") if d.strip()}
+
+    # 10055 — form-action não herda de default-src e precisa estar definida.
+    assert diretivas["form-action"] == "form-action 'none'"
+    # 10055 — style-src sem 'unsafe-inline'.
+    assert "unsafe-inline" not in diretivas["style-src"]
+    # 90003 — todo arquivo do CDN carrega com Subresource Integrity.
+    for tag in re.findall(r"<(?:script|link)[^>]*cdn\.jsdelivr\.net[^>]*>", resposta.text):
+        assert 'integrity="sha384-' in tag, tag
+        assert 'crossorigin="anonymous"' in tag, tag
+    # Versão fixa: "@5" mudaria o arquivo (e invalidaria o hash) a cada release.
+    assert "swagger-ui-dist@5/" not in resposta.text
+    # 90004 (Low) — página isolada de outras origens.
+    assert resposta.headers["Cross-Origin-Embedder-Policy"] == "require-corp"
+
+
+def test_redoc_foi_removido(client):
+    """O ReDoc exigia style-src 'unsafe-inline'; no TP3 só o /docs é servido."""
+    assert client.get("/redoc").status_code == 404
 
 
 def test_banner_do_servidor_nao_expoe_a_stack(client):

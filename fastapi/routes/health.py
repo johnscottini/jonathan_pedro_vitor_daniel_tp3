@@ -11,6 +11,7 @@ router = APIRouter(tags=["health"])
     "/health",
     response_model=HealthResponse,
     summary="Verifica se a API está ativa",
+    description="Rota pública (sem autenticação) para monitoramento. Devolve o status e a versão da API.",
     responses={500: {"model": ErrorResponse, "description": "Erro interno"}},
 )
 def health_check() -> HealthResponse:

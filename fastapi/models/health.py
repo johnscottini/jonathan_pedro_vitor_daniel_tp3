@@ -10,4 +10,4 @@ from pydantic import BaseModel, Field
 
 class HealthResponse(BaseModel):
     status: str = Field(..., description="'ok' quando a API está no ar", examples=["ok"])
-    version: str = Field(..., description="Versão da API", examples=["0.2.0"])
+    version: str = Field(..., description="Versão da API", examples=["0.3.0"])

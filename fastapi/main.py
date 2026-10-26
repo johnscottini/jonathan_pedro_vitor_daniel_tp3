@@ -34,9 +34,20 @@ app = FastAPI(
     description=(
         "API do sistema de atendimento ao cliente. Expõe autenticação JWT, "
         "gestão de tickets por usuário e um endpoint de predição de intenção "
-        "com saída simulada (o modelo de ML real será integrado em um TP futuro)."
+        "com saída simulada (o modelo de ML real será integrado em um TP futuro).\n\n"
+        "**Como autenticar:** faça `POST /auth/token` com `username` e `password` "
+        "(ou clique em **Authorize** e informe as credenciais). As rotas marcadas com "
+        "cadeado exigem o header `Authorization: Bearer <token>`.\n\n"
+        "**Erros:** toda resposta de erro segue o formato `ErrorResponse` "
+        "(`code`, `message`, `path` e, em 422, `fields`)."
     ),
     version=API_VERSION,
+    openapi_tags=[
+        {"name": "health", "description": "Monitoramento — rota pública."},
+        {"name": "auth", "description": "Login e emissão do token JWT (limitado a 5 tentativas/min por IP)."},
+        {"name": "predict", "description": "Predição de intenção do texto do ticket — requer token."},
+        {"name": "tickets", "description": "Tickets do usuário autenticado, com verificação de dono — requer token."},
+    ],
     lifespan=lifespan,
     # /docs e /redoc são servidos por `routes/docs.py`, que monta a CSP com o
     # hash do script inline do Swagger em vez de liberar 'unsafe-inline'.
