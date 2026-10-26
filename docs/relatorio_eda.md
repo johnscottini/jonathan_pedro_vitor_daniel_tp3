@@ -215,7 +215,8 @@ mas vale medir, em vez de assumir.
 - **Baseline obrigatório:** classificador que sempre responde a classe mais
   frequente. Pelo insight **I3**, ele acerta ~20,7%. Qualquer modelo precisa
   superar isso com folga para justificar existir.
-- **Modelo inicial:** TF-IDF sobre a descrição + regressão logística. Simples,
+- **Modelo inicial:** `CountVectorizer` sobre a descrição + regressão logística
+  (decisão fechada no TP3, ver [`others/planejamento.md`](../others/planejamento.md)). Simples,
   rápido e interpretável — permite inspecionar quais palavras pesam em cada
   classe, o que é mais informativo aqui do que ganhar alguns pontos com um modelo
   opaco.
@@ -237,3 +238,67 @@ palavras-chave. No TP3 ele passa a carregar o modelo treinado e devolver a class
 prevista com a probabilidade associada, mantendo o mesmo contrato de entrada e
 saída (`PredictRequest` / `PredictResponse`) — a troca fica invisível para quem
 consome a API.
+
+---
+
+## 7. TP3 — Regressão linear (seção 8 do notebook)
+
+| Item | Definição |
+|---|---|
+| Alvo (y) | `n_palavras_descricao`: palavras de `Ticket Description` limpa (média 48,1, desvio 8,5, de 22 a 65) |
+| Entradas (X) | one-hot de `Ticket Type`, `Ticket Subject`, `Ticket Priority`, `Ticket Channel`, `Product Purchased`, `Customer Gender` + `Customer Age` (75 atributos). O texto ficou de fora para não tornar o problema circular |
+| Modelo | `LinearRegression` em `Pipeline` com `OneHotEncoder`, treino/teste 80/20 (`random_state=42`) |
+
+| Conjunto | R² | RMSE (palavras) |
+|---|---|---|
+| Regressão linear — treino | 0,011 | 8,41 |
+| Regressão linear — teste | **−0,006** | **8,81** |
+| Baseline (sempre a média) — teste | −0,001 | 8,79 |
+
+**Leitura.** R² ≈ 0 (levemente negativo) no teste significa que o modelo não
+explica nada da variação do tamanho da mensagem: ele empata com prever a média.
+O RMSE de ~8,8 palavras é igual ao do baseline e ao desvio padrão do alvo. O R²
+um pouco maior no treino indica que o pouco aprendido era ruído.
+
+**Resíduos.** As previsões ficam entre 45,5 e 51,5 palavras, enquanto o real vai
+de 22 a 65: o modelo devolve praticamente a média para todo mundo. O Q-Q Plot
+tem forma de "S", com cauda esquerda longa (um grupo de descrições curtas que
+nenhum atributo antecipa) e cauda direita curta (o texto tem teto de ~65
+palavras). O Shapiro-Wilk rejeita a normalidade (p ≈ 8e-16), e os resíduos
+formam faixas por o alvo ser uma contagem inteira.
+
+**Limitações.** (1) não há sinal a capturar, o que confirma H1 a H4 e I2; (2) o
+alvo é discreto e assimétrico, o que viola a hipótese de resíduos normais; (3) a
+regressão linear só modela efeitos aditivos; (4) o texto foi excluído das
+entradas de propósito.
+
+**Por que não representa o problema principal.** A regressão prevê uma
+quantidade. A intenção é uma categoria nominal, e saber o tamanho da mensagem
+não diz qual é o pedido do cliente.
+
+## 8. TP3 — Formalização do problema de classificação (seção 9 do notebook)
+
+> **Dado o texto de uma mensagem de atendimento ao cliente, qual é a intenção do usuário?**
+
+- **X:** `Ticket Description` (texto limpo, sem o placeholder `{product_purchased}`).
+- **y:** `Ticket Type`, com classificação supervisionada multiclasse e 5 classes.
+
+| Classe de intenção | Exemplos | % |
+|---|---|---|
+| Refund request | 1.752 | 20,69 |
+| Technical issue | 1.747 | 20,63 |
+| Cancellation request | 1.695 | 20,01 |
+| Product inquiry | 1.641 | 19,38 |
+| Billing inquiry | 1.634 | 19,29 |
+| **Total** | **8.469** | **100,00** |
+
+Nenhuma classe é significativamente mais frequente: a razão entre a maior e a
+menor é 1,07, e o qui-quadrado da H1 (p ≈ 0,11) é compatível com uma
+distribuição uniforme. Por isso não há necessidade de balanceamento, e o
+baseline da classe majoritária acerta 20,7%.
+
+**Por que classificação.** O alvo é categórico nominal. Codificá-lo como 0 a 4
+para uma regressão linear inventaria ordem e distância entre intenções, e a saída
+contínua (ex.: 2,4) não corresponde a nenhuma classe. Um classificador aprende
+fronteiras entre as classes, devolve uma probabilidade por classe (o formato de
+`/predict`) e é avaliado com acurácia, F1 e matriz de confusão, não com R²/RMSE.
